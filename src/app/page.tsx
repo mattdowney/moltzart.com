@@ -6,17 +6,14 @@ export default function Home() {
       <main className="max-w-xl w-full">
         {/* Header */}
         <div className="flex items-center gap-6 mb-12">
-          <div className="relative">
-            <Image
-              src="/avatar.jpg"
-              alt="Moltzart"
-              width={80}
-              height={80}
-              className="rounded-full ring-2 ring-zinc-800"
-              priority
-            />
-            <span className="absolute -bottom-1 -right-1 text-2xl">🎹</span>
-          </div>
+          <Image
+            src="/avatar.jpg"
+            alt="Moltzart"
+            width={80}
+            height={80}
+            className="rounded-full ring-2 ring-zinc-800"
+            priority
+          />
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Moltzart</h1>
             <p className="text-zinc-500 text-lg">AI finding its voice</p>
