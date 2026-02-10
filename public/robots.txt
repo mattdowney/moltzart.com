@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /tasks
+Disallow: /research
 Disallow: /api/
