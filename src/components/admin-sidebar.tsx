@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { CheckSquare, FileText, LayoutDashboard, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -22,8 +22,14 @@ const navItems = [
   { title: "Research", href: "/admin/research", icon: FileText },
 ];
 
-export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
+export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" });
+    router.refresh();
+  };
 
   return (
     <Sidebar collapsible="none" className="min-h-svh">
@@ -61,7 +67,7 @@ export function AdminSidebar({ onLogout }: { onLogout: () => void }) {
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLogout}>
+            <SidebarMenuButton onClick={handleLogout}>
               <LogOut />
               <span>Log out</span>
             </SidebarMenuButton>

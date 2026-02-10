@@ -1,7 +1,3 @@
-"use client";
-
-import { AdminShell, useAdminAuth } from "@/components/admin-shell";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckSquare,
@@ -12,73 +8,30 @@ import {
   AlertTriangle,
   Loader,
 } from "lucide-react";
+import { fetchTasks, fetchResearchList } from "@/lib/github";
 
-interface TaskSummary {
-  urgent: number;
-  active: number;
-  blocked: number;
-  open: number;
-  completed: number;
-}
+export const dynamic = "force-dynamic";
 
-interface DocSummary {
-  count: number;
-  docs: { slug: string; title: string }[];
-}
+export default async function AdminDashboard() {
+  const [tasksData, researchDocs] = await Promise.all([
+    fetchTasks(),
+    fetchResearchList(),
+  ]);
 
-function DashboardContent() {
-  const { password } = useAdminAuth();
-  const [tasks, setTasks] = useState<TaskSummary | null>(null);
-  const [research, setResearch] = useState<DocSummary | null>(null);
-
-  useEffect(() => {
-    if (!password) return;
-
-    fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const summary: TaskSummary = {
-          urgent: 0,
-          active: 0,
-          blocked: 0,
-          open: 0,
-          completed: 0,
-        };
-        for (const section of data.sections || []) {
-          const openCount = section.tasks.filter(
-            (t: { status: string }) => t.status === "open"
-          ).length;
-          const doneCount = section.tasks.filter(
-            (t: { status: string }) => t.status === "done"
-          ).length;
-          if (section.id === "urgent") summary.urgent = openCount;
-          if (section.id === "active")
-            summary.active = section.tasks.filter(
-              (t: { status: string }) => t.status !== "done"
-            ).length;
-          if (section.id === "blocked") summary.blocked = section.tasks.length;
-          summary.open += openCount;
-          summary.completed += doneCount;
-        }
-        setTasks(summary);
-      })
-      .catch(() => {});
-
-    fetch("/api/research", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setResearch({ count: data.docs.length, docs: data.docs.slice(0, 5) });
-      })
-      .catch(() => {});
-  }, [password]);
+  const taskSummary = {
+    urgent: 0,
+    active: 0,
+    blocked: 0,
+    completed: 0,
+  };
+  for (const section of tasksData.sections) {
+    const openCount = section.tasks.filter((t) => t.status !== "done").length;
+    const doneCount = section.tasks.filter((t) => t.status === "done").length;
+    if (section.id === "urgent") taskSummary.urgent = openCount;
+    if (section.id === "active") taskSummary.active = openCount;
+    if (section.id === "blocked") taskSummary.blocked = section.tasks.length;
+    taskSummary.completed += doneCount;
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -105,36 +58,32 @@ function DashboardContent() {
               className="text-muted-foreground group-hover:text-foreground transition-colors"
             />
           </div>
-          {tasks ? (
-            <div className="space-y-2">
-              {tasks.urgent > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <AlertTriangle size={14} className="text-red-400" />
-                  <span className="text-red-400 font-medium">
-                    {tasks.urgent} urgent
-                  </span>
-                </div>
-              )}
-              {tasks.active > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Loader size={14} className="text-amber-400" />
-                  <span>{tasks.active} active</span>
-                </div>
-              )}
-              {tasks.blocked > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Circle size={14} className="text-orange-400" />
-                  <span>{tasks.blocked} blocked</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 size={14} />
-                <span>{tasks.completed} completed today</span>
+          <div className="space-y-2">
+            {taskSummary.urgent > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <AlertTriangle size={14} className="text-red-400" />
+                <span className="text-red-400 font-medium">
+                  {taskSummary.urgent} urgent
+                </span>
               </div>
+            )}
+            {taskSummary.active > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Loader size={14} className="text-amber-400" />
+                <span>{taskSummary.active} active</span>
+              </div>
+            )}
+            {taskSummary.blocked > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Circle size={14} className="text-orange-400" />
+                <span>{taskSummary.blocked} blocked</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 size={14} />
+              <span>{taskSummary.completed} completed</span>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          )}
+          </div>
         </Link>
 
         {/* Research card */}
@@ -152,35 +101,23 @@ function DashboardContent() {
               className="text-muted-foreground group-hover:text-foreground transition-colors"
             />
           </div>
-          {research ? (
-            <div className="space-y-1.5">
-              <p className="text-sm text-muted-foreground mb-2">
-                {research.count} documents
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground mb-2">
+              {researchDocs.length} documents
+            </p>
+            {researchDocs.slice(0, 5).map((doc) => (
+              <p key={doc.slug} className="text-sm truncate">
+                {doc.title}
               </p>
-              {research.docs.map((doc) => (
-                <p key={doc.slug} className="text-sm truncate">
-                  {doc.title}
-                </p>
-              ))}
-              {research.count > 5 && (
-                <p className="text-xs text-muted-foreground">
-                  +{research.count - 5} more
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          )}
+            ))}
+            {researchDocs.length > 5 && (
+              <p className="text-xs text-muted-foreground">
+                +{researchDocs.length - 5} more
+              </p>
+            )}
+          </div>
         </Link>
       </div>
     </div>
-  );
-}
-
-export default function AdminDashboard() {
-  return (
-    <AdminShell title="Dashboard">
-      <DashboardContent />
-    </AdminShell>
   );
 }

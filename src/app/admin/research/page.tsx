@@ -1,20 +1,8 @@
-"use client";
-
-import { AdminShell, useAdminAuth } from "@/components/admin-shell";
-import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
+import { fetchResearchList, type ResearchDoc } from "@/lib/github";
 
-interface Doc {
-  slug: string;
-  title: string;
-  createdAt: string | null;
-}
-
-interface DateGroup {
-  label: string;
-  docs: Doc[];
-}
+export const dynamic = "force-dynamic";
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -49,12 +37,17 @@ function formatDateLabel(dateStr: string): string {
   });
 }
 
-function groupByDate(docs: Doc[]): DateGroup[] {
-  const groups: Map<string, Doc[]> = new Map();
+interface DateGroup {
+  label: string;
+  docs: ResearchDoc[];
+}
+
+function groupByDate(docs: ResearchDoc[]): DateGroup[] {
+  const groups: Map<string, ResearchDoc[]> = new Map();
 
   for (const doc of docs) {
     if (!doc.createdAt) {
-      const key = "Unknown date";
+      const key = "_unknown";
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(doc);
       continue;
@@ -66,50 +59,24 @@ function groupByDate(docs: Doc[]): DateGroup[] {
       month: "2-digit",
       day: "2-digit",
     });
-    const label = formatDateLabel(doc.createdAt);
     if (!groups.has(dateKey)) groups.set(dateKey, []);
     groups.get(dateKey)!.push(doc);
   }
 
   return Array.from(groups.entries()).map(([key, docs]) => ({
-    label: key === "Unknown date" ? key : formatDateLabel(docs[0].createdAt!),
+    label: key === "_unknown" ? "Unknown date" : formatDateLabel(docs[0].createdAt!),
     docs,
   }));
 }
 
-function ResearchContent() {
-  const { password } = useAdminAuth();
-  const [docs, setDocs] = useState<Doc[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchDocs = useCallback(async () => {
-    if (!password) return;
-    try {
-      const res = await fetch("/api/research", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDocs(data.docs);
-      }
-    } catch {}
-    setLoading(false);
-  }, [password]);
-
-  useEffect(() => {
-    fetchDocs();
-  }, [fetchDocs]);
-
+export default async function AdminResearch() {
+  const docs = await fetchResearchList();
   const groups = groupByDate(docs);
 
   return (
     <div className="max-w-2xl">
       <h1 className="text-xl font-semibold tracking-tight mb-6">Research</h1>
-      {loading ? (
-        <p className="text-sm text-zinc-500">Loading...</p>
-      ) : docs.length === 0 ? (
+      {docs.length === 0 ? (
         <p className="text-sm text-zinc-500">No research documents yet.</p>
       ) : (
         <div className="space-y-6">
@@ -126,9 +93,7 @@ function ResearchContent() {
                     className="flex items-center gap-3 px-4 py-3 border border-zinc-800/50 rounded-lg bg-zinc-900/30 hover:bg-zinc-800/40 transition-colors group"
                   >
                     <FileText size={16} className="text-zinc-500 shrink-0" />
-                    <span className="text-sm text-zinc-200 flex-1">
-                      {doc.title}
-                    </span>
+                    <span className="text-sm text-zinc-200 flex-1">{doc.title}</span>
                     {doc.createdAt && (
                       <span className="text-xs text-zinc-600 shrink-0">
                         {formatTime(doc.createdAt)}
@@ -146,13 +111,5 @@ function ResearchContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function AdminResearch() {
-  return (
-    <AdminShell title="Research">
-      <ResearchContent />
-    </AdminShell>
   );
 }
