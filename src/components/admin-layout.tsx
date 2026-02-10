@@ -5,7 +5,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset>
+      <SidebarInset className="max-h-svh overflow-y-auto">
         <main className="flex-1 p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
