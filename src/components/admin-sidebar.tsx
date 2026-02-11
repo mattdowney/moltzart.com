@@ -34,7 +34,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="none" className="min-h-svh">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4 flex items-center justify-center">
+      <SidebarHeader className="px-4 pt-4 pb-2">
         <img
           src="/avatar.jpg"
           alt="Moltzart"
@@ -43,7 +43,6 @@ export function AdminSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
