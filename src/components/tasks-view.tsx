@@ -160,15 +160,24 @@ function RecurringStrip({ tasks }: { tasks: RecurringTask[] }) {
       </button>
       {open && (
         <div className="px-4 pb-3 border-t border-zinc-800/20">
-          <div className="pt-2 space-y-1.5">
-            {tasks.map((t, i) => (
-              <div key={i} className="flex items-center gap-3 text-xs">
-                <span className="text-zinc-300 flex-1">{t.task}</span>
-                <span className="text-zinc-500 font-mono">{t.schedule}</span>
-                <span className="text-zinc-600">{t.method}</span>
-              </div>
-            ))}
-          </div>
+          <table className="w-full mt-3">
+            <thead>
+              <tr className="text-xs text-zinc-500">
+                <th className="text-left font-medium pb-2">Task Name</th>
+                <th className="text-left font-medium pb-2">Runs</th>
+                <th className="text-left font-medium pb-2">Execution</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.map((t, i) => (
+                <tr key={i} className="text-xs">
+                  <td className="text-left text-zinc-300 py-2 pr-4">{t.task}</td>
+                  <td className="text-left text-zinc-500 font-mono py-2 pr-4 whitespace-nowrap">{t.schedule}</td>
+                  <td className="text-left text-zinc-600 py-2">{t.method}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
