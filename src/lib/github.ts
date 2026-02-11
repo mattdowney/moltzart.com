@@ -297,11 +297,12 @@ function parseDraftsMd(md: string): Draft[] {
         replyContext = replyMatch[2];
       }
 
-      // Determine status from section + suffix markers
+      // Determine status from section + suffix markers + inline markers in typeStr
+      const markers = typeStr + " " + statusSuffix;
       let status = currentSection;
-      if (statusSuffix.includes("REJECTED") || statusSuffix.includes("❌")) status = "rejected";
-      if (statusSuffix.includes("✅")) status = currentSection === "posted" ? "posted" : "approved";
-      if (statusSuffix.includes("STALE") || statusSuffix.includes("KILLED")) status = "rejected";
+      if (markers.includes("REJECTED") || markers.includes("❌")) status = "rejected";
+      if (markers.includes("✅")) status = currentSection === "posted" ? "posted" : "approved";
+      if (markers.includes("STALE") || markers.includes("KILLED")) status = "rejected";
 
       // Collect content (blockquote lines)
       let content = "";
