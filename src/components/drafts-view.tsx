@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { Draft, DraftDay, DraftStatus } from "@/lib/github";
+import type { Draft, DraftStatus } from "@/lib/github";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
 function statusBadge(status: DraftStatus) {
@@ -42,17 +34,117 @@ function statusBadge(status: DraftStatus) {
   }
 }
 
-export function DraftsView({
-  days: initialDays,
-  sha: initialSha,
+function DraftCard({
+  draft,
+  onAction,
+  acting,
 }: {
-  days: DraftDay[];
-  sha: string;
+  draft: Draft;
+  onAction: (id: string, action: "approve" | "reject") => void;
+  acting: string | null;
 }) {
-  const [days, setDays] = useState(initialDays);
+  const isPending = draft.status === "pending";
+
+  return (
+    <div className={`rounded-lg border p-5 space-y-4 ${
+      isPending
+        ? "border-zinc-700 bg-zinc-900/60"
+        : "border-zinc-800/50 bg-zinc-900/30"
+    }`}>
+      {/* Header: type + status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
+          {draft.type === "reply" && draft.replyTo ? (
+            <>
+              <span>Reply to</span>
+              <a
+                href={`https://x.com/${draft.replyTo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-300 hover:underline font-medium"
+              >
+                @{draft.replyTo}
+              </a>
+              {draft.replyContext && (
+                <span className="text-zinc-600">&mdash; {draft.replyContext}</span>
+              )}
+            </>
+          ) : (
+            <span className="font-medium text-zinc-400">Original post</span>
+          )}
+        </div>
+        {statusBadge(draft.status)}
+      </div>
+
+      {/* Draft content — the main event */}
+      <p className="text-[15px] leading-relaxed text-zinc-100">
+        {draft.content}
+      </p>
+
+      {/* Footer: char count, links, feedback */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-zinc-600">
+          <span>{draft.content.length} chars</span>
+          {draft.tweetId && (
+            <a
+              href={`https://x.com/moltzart/status/${draft.tweetId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-zinc-400 underline"
+            >
+              View on X
+            </a>
+          )}
+        </div>
+
+        {/* Actions for pending drafts */}
+        {isPending && (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => onAction(draft.id, "approve")}
+              disabled={acting === draft.id}
+              className="bg-green-600 text-white hover:bg-green-500"
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onAction(draft.id, "reject")}
+              disabled={acting === draft.id}
+              className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+            >
+              Reject
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Feedback if rejected */}
+      {draft.feedback && (
+        <p className="text-xs text-zinc-600 italic border-t border-zinc-800/50 pt-3">
+          {draft.feedback}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function DayDraftsView({ drafts: initialDrafts }: { drafts: Draft[] }) {
+  const [drafts, setDrafts] = useState(initialDrafts);
   const [acting, setActing] = useState<string | null>(null);
 
-  const allDrafts = days.flatMap((d) => d.drafts);
+  // Show pending first, then approved, posted, rejected
+  const sorted = [...drafts].sort((a, b) => {
+    const order: Record<DraftStatus, number> = {
+      pending: 0,
+      approved: 1,
+      posted: 2,
+      rejected: 3,
+    };
+    return order[a.status] - order[b.status];
+  });
 
   const handleAction = async (draftId: string, action: "approve" | "reject") => {
     setActing(draftId);
@@ -63,15 +155,12 @@ export function DraftsView({
         body: JSON.stringify({ draftId, action }),
       });
       if (res.ok) {
-        setDays((prev) =>
-          prev.map((day) => ({
-            ...day,
-            drafts: day.drafts.map((d) =>
-              d.id === draftId
-                ? { ...d, status: (action === "approve" ? "approved" : "rejected") as DraftStatus }
-                : d
-            ),
-          }))
+        setDrafts((prev) =>
+          prev.map((d) =>
+            d.id === draftId
+              ? { ...d, status: (action === "approve" ? "approved" : "rejected") as DraftStatus }
+              : d
+          )
         );
       }
     } catch (e) {
@@ -82,79 +171,15 @@ export function DraftsView({
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-20">Status</TableHead>
-          <TableHead className="w-20">Type</TableHead>
-          <TableHead>Draft</TableHead>
-          <TableHead className="w-36 text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {allDrafts.map((draft) => (
-          <TableRow key={draft.id}>
-            <TableCell>{statusBadge(draft.status)}</TableCell>
-            <TableCell className="text-xs text-zinc-400">
-              {draft.type === "reply" && draft.replyTo ? (
-                <a
-                  href={`https://x.com/${draft.replyTo}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-zinc-200 hover:underline"
-                >
-                  @{draft.replyTo}
-                </a>
-              ) : (
-                "Original"
-              )}
-            </TableCell>
-            <TableCell>
-              <p className="text-sm text-zinc-200 leading-relaxed">
-                {draft.content}
-              </p>
-              <span className="text-xs text-zinc-600">{draft.content.length} chars</span>
-              {draft.tweetId && (
-                <a
-                  href={`https://x.com/moltzart/status/${draft.tweetId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-zinc-600 hover:text-zinc-400 underline ml-2"
-                >
-                  View
-                </a>
-              )}
-              {draft.feedback && (
-                <p className="text-xs text-zinc-600 italic mt-1">{draft.feedback}</p>
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-              {draft.status === "pending" && (
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-green-600/30 text-green-400 hover:bg-green-600/20 hover:text-green-300"
-                    onClick={() => handleAction(draft.id, "approve")}
-                    disabled={acting === draft.id}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-zinc-700 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-400"
-                    onClick={() => handleAction(draft.id, "reject")}
-                    disabled={acting === draft.id}
-                  >
-                    Reject
-                  </Button>
-                </div>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-4">
+      {sorted.map((draft) => (
+        <DraftCard
+          key={draft.id}
+          draft={draft}
+          onAction={handleAction}
+          acting={acting}
+        />
+      ))}
+    </div>
   );
 }

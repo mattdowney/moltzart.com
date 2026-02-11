@@ -1,13 +1,5 @@
 import { fetchDrafts } from "@/lib/github";
 import Link from "next/link";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
@@ -15,79 +7,64 @@ export const dynamic = "force-dynamic";
 export default async function AdminDrafts() {
   const { days } = await fetchDrafts();
 
+  const allDrafts = days.flatMap((d) => d.drafts);
+  const pending = allDrafts.filter((d) => d.status === "pending").length;
+
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-semibold tracking-tight mb-6">Drafts</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-xl font-semibold tracking-tight">Drafts</h1>
+        {pending > 0 && (
+          <Badge variant="outline" className="border-amber-500/30 text-amber-400 bg-amber-500/10">
+            {pending} to review
+          </Badge>
+        )}
+      </div>
 
       {days.length === 0 ? (
         <p className="text-sm text-zinc-500">No drafts yet.</p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Pending</TableHead>
-              <TableHead className="text-right">Approved</TableHead>
-              <TableHead className="text-right">Posted</TableHead>
-              <TableHead className="text-right">Rejected</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {days.map((day) => {
-              const pending = day.drafts.filter((d) => d.status === "pending").length;
-              const approved = day.drafts.filter((d) => d.status === "approved").length;
-              const posted = day.drafts.filter((d) => d.status === "posted").length;
-              const rejected = day.drafts.filter((d) => d.status === "rejected").length;
+        <div className="space-y-1">
+          {days.map((day) => {
+            const dayPending = day.drafts.filter((d) => d.status === "pending").length;
+            const dayPosted = day.drafts.filter((d) => d.status === "posted").length;
+            const dayApproved = day.drafts.filter((d) => d.status === "approved").length;
 
-              return (
-                <TableRow key={day.date}>
-                  <TableCell>
-                    <Link
-                      href={`/admin/drafts/${day.date}`}
-                      className="text-zinc-200 hover:text-white hover:underline font-medium"
-                    >
-                      {day.label}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {pending > 0 ? (
-                      <Badge variant="outline" className="border-amber-500/30 text-amber-400 bg-amber-500/10">
-                        {pending}
-                      </Badge>
-                    ) : (
-                      <span className="text-zinc-600">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {approved > 0 ? (
-                      <span className="text-green-400">{approved}</span>
-                    ) : (
-                      <span className="text-zinc-600">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {posted > 0 ? (
-                      <span className="text-blue-400">{posted}</span>
-                    ) : (
-                      <span className="text-zinc-600">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {rejected > 0 ? (
-                      <span className="text-zinc-500">{rejected}</span>
-                    ) : (
-                      <span className="text-zinc-600">0</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-zinc-400">
-                    {day.drafts.length}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+            return (
+              <Link
+                key={day.date}
+                href={`/admin/drafts/${day.date}`}
+                className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-zinc-900/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-zinc-200 group-hover:text-white">
+                    {day.label}
+                  </span>
+                  <span className="text-xs text-zinc-600">
+                    {day.drafts.length} draft{day.drafts.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {dayPending > 0 && (
+                    <Badge variant="outline" className="border-amber-500/30 text-amber-400 bg-amber-500/10 text-[11px]">
+                      {dayPending} pending
+                    </Badge>
+                  )}
+                  {dayApproved > 0 && (
+                    <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10 text-[11px]">
+                      {dayApproved} approved
+                    </Badge>
+                  )}
+                  {dayPosted > 0 && (
+                    <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10 text-[11px]">
+                      {dayPosted} posted
+                    </Badge>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </div>
   );
