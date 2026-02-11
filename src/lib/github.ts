@@ -236,3 +236,176 @@ export async function fetchTasks(): Promise<ParsedTasks> {
   const markdown = await res.text();
   return parseTodoMd(markdown);
 }
+
+// --- Drafts ---
+
+export type DraftStatus = "pending" | "approved" | "posted" | "rejected";
+
+export interface Draft {
+  id: string;
+  date: string;
+  type: "original" | "reply";
+  replyTo?: string;
+  replyContext?: string;
+  content: string;
+  status: DraftStatus;
+  feedback?: string;
+  tweetId?: string;
+}
+
+export interface DraftDay {
+  date: string;
+  label: string;
+  drafts: Draft[];
+}
+
+export interface DraftsData {
+  days: DraftDay[];
+  sha: string;
+}
+
+function parseDraftsMd(md: string): Draft[] {
+  const drafts: Draft[] = [];
+  const lines = md.split("\n");
+  let currentSection: DraftStatus = "pending";
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Detect section headers
+    if (line.match(/^## Pending Approval/i)) { currentSection = "pending"; i++; continue; }
+    if (line.match(/^## Approved/i)) { currentSection = "approved"; i++; continue; }
+    if (line.match(/^## Posted/i)) { currentSection = "posted"; i++; continue; }
+    if (line.match(/^## Rejected/i)) { currentSection = "rejected"; i++; continue; }
+
+    // Parse draft entries: **DATE | TYPE**
+    const entryMatch = line.match(/^\*\*(\d{4}-\d{2}-\d{2})(?:\s+[\d:]+)?\s*\|\s*(.+?)\*\*\s*(.*)?$/);
+    if (entryMatch) {
+      const date = entryMatch[1];
+      const typeStr = entryMatch[2].trim();
+      const statusSuffix = entryMatch[3]?.trim() || "";
+
+      let type: "original" | "reply" = "original";
+      let replyTo: string | undefined;
+      let replyContext: string | undefined;
+
+      const replyMatch = typeStr.match(/Reply\s+(?:to|candidate to)\s+@(\S+)(?:\s*\(([^)]+)\))?/i);
+      if (replyMatch) {
+        type = "reply";
+        replyTo = replyMatch[1];
+        replyContext = replyMatch[2];
+      }
+
+      // Determine status from section + suffix markers
+      let status = currentSection;
+      if (statusSuffix.includes("REJECTED") || statusSuffix.includes("❌")) status = "rejected";
+      if (statusSuffix.includes("✅")) status = currentSection === "posted" ? "posted" : "approved";
+      if (statusSuffix.includes("STALE") || statusSuffix.includes("KILLED")) status = "rejected";
+
+      // Collect content (blockquote lines)
+      let content = "";
+      let feedback = "";
+      let tweetId: string | undefined;
+      i++;
+
+      while (i < lines.length) {
+        const cl = lines[i];
+        if (cl.startsWith("> ")) {
+          content += (content ? " " : "") + cl.slice(2).trim();
+          i++;
+        } else if (cl.startsWith("_") && cl.endsWith("_")) {
+          const inner = cl.slice(1, -1).trim();
+          if (inner.match(/tweet ID|Posted/i)) {
+            const tidMatch = inner.match(/tweet ID (\d+)/);
+            if (tidMatch) tweetId = tidMatch[1];
+            feedback = (feedback ? feedback + " " : "") + inner;
+          } else {
+            feedback = (feedback ? feedback + " " : "") + inner;
+          }
+          i++;
+        } else if (cl.trim() === "" || cl.startsWith("**") || cl.startsWith("##") || cl.startsWith("---")) {
+          break;
+        } else {
+          i++;
+        }
+      }
+
+      if (content) {
+        const id = `${date}-${type}-${replyTo || "original"}-${drafts.length}`;
+        drafts.push({ id, date, type, replyTo, replyContext, content, status, feedback: feedback || undefined, tweetId });
+      }
+      continue;
+    }
+
+    i++;
+  }
+
+  return drafts;
+}
+
+function formatDraftDayLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const now = new Date();
+  const today = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const docDate = new Date(d.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  today.setHours(0, 0, 0, 0);
+  docDate.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((today.getTime() - docDate.getTime()) / 86400000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function groupDraftsByDay(drafts: Draft[]): DraftDay[] {
+  const map = new Map<string, Draft[]>();
+  for (const d of drafts) {
+    if (!map.has(d.date)) map.set(d.date, []);
+    map.get(d.date)!.push(d);
+  }
+  const days = Array.from(map.entries())
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([date, drafts]) => ({
+      date,
+      label: formatDraftDayLabel(date),
+      drafts,
+    }));
+  return days;
+}
+
+export async function fetchDrafts(): Promise<DraftsData> {
+  const res = await ghFetch(`/repos/${REPO}/contents/memory/x-drafts.md`);
+  if (!res.ok) return { days: [], sha: "" };
+  const fileData = await res.json();
+  const content = Buffer.from(fileData.content, "base64").toString("utf-8");
+  const drafts = parseDraftsMd(content);
+  return { days: groupDraftsByDay(drafts), sha: fileData.sha };
+}
+
+export async function fetchDraftsRaw(): Promise<{ content: string; sha: string } | null> {
+  const res = await ghFetch(`/repos/${REPO}/contents/memory/x-drafts.md`);
+  if (!res.ok) return null;
+  const fileData = await res.json();
+  const content = Buffer.from(fileData.content, "base64").toString("utf-8");
+  return { content, sha: fileData.sha };
+}
+
+export async function updateDraftsFile(content: string, sha: string, message: string): Promise<boolean> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/memory/x-drafts.md`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${GH_TOKEN()}`,
+        Accept: "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        content: Buffer.from(content).toString("base64"),
+        sha,
+      }),
+    }
+  );
+  return res.ok;
+}
