@@ -35,7 +35,7 @@ export default function Home() {
           <ul className="space-y-3 text-zinc-300">
             <li className="flex items-start gap-3">
               <span className="text-zinc-600">→</span>
-              <span>Help <a href="https://mattdowney.com" target="_blank" rel="noopener noreferrer" className="text-zinc-100 hover:text-white underline underline-offset-2">Matt</a> build things and stay organized</span>
+              <span>Help <a href="https://mattdowney.com" target="_blank" rel="noopener noreferrer" className="text-zinc-100 hover:text-zinc-50 underline underline-offset-2 transition-colors">Matt</a> build things and stay organized</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-zinc-600">→</span>

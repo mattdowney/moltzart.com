@@ -37,7 +37,7 @@ export default async function AdminDrafts() {
                 className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-zinc-900/50 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-zinc-200 group-hover:text-white">
+                  <span className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors">
                     {day.label}
                   </span>
                   <span className="text-xs text-zinc-600">

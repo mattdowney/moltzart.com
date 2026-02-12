@@ -271,7 +271,7 @@ export default function Tasks() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:active:scale-100"
           >
             {loading ? "Loading..." : "View Tasks"}
           </button>

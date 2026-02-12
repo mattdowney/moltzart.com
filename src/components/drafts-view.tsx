@@ -72,7 +72,7 @@ function DraftCard({
                 href={`https://x.com/${draft.replyTo}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-300 hover:underline font-medium"
+                className="text-zinc-300 hover:underline font-medium transition-all"
               >
                 @{draft.replyTo}
               </a>
@@ -97,7 +97,7 @@ function DraftCard({
               href={`https://x.com/moltzart/status/${draft.tweetId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-zinc-400 underline"
+              className="hover:text-zinc-400 underline transition-colors"
             >
               View on X
             </a>
@@ -110,7 +110,7 @@ function DraftCard({
               size="sm"
               onClick={() => onAction(draft.id, "approve")}
               disabled={acting === draft.id}
-              className="bg-green-600 text-white hover:bg-green-500"
+              className="bg-green-600 text-white hover:bg-green-500 transition-colors"
             >
               {acting === draft.id ? "Saving..." : "Approve"}
             </Button>
@@ -119,7 +119,7 @@ function DraftCard({
               variant="outline"
               onClick={() => onAction(draft.id, "reject")}
               disabled={acting === draft.id}
-              className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+              className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
             >
               Reject
             </Button>

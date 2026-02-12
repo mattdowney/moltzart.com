@@ -92,7 +92,7 @@ export default async function AdminDashboard() {
                   <AlertTriangle size={14} className="text-red-400" />
                   <span className="text-sm font-medium text-zinc-200">Urgent tasks</span>
                 </div>
-                <Link href="/admin/tasks" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+                <Link href="/admin/tasks" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
                   View all <ArrowUpRight size={10} />
                 </Link>
               </div>
@@ -114,7 +114,7 @@ export default async function AdminDashboard() {
                   <PenLine size={14} className="text-amber-400" />
                   <span className="text-sm font-medium text-zinc-200">Drafts awaiting review</span>
                 </div>
-                <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+                <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
                   Review <ArrowUpRight size={10} />
                 </Link>
               </div>
@@ -136,7 +136,7 @@ export default async function AdminDashboard() {
                   <CheckCircle2 size={14} className="text-green-400" />
                   <span className="text-sm font-medium text-zinc-200">Approved — ready to post</span>
                 </div>
-                <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+                <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
                   View <ArrowUpRight size={10} />
                 </Link>
               </div>
@@ -159,7 +159,7 @@ export default async function AdminDashboard() {
         <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-200">X / @moltzart</span>
-            <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+            <Link href="/admin/drafts" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
               Drafts <ArrowUpRight size={10} />
             </Link>
           </div>
@@ -187,7 +187,7 @@ export default async function AdminDashboard() {
         <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-200">Tasks</span>
-            <Link href="/admin/tasks" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+            <Link href="/admin/tasks" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
               All tasks <ArrowUpRight size={10} />
             </Link>
           </div>
@@ -217,7 +217,7 @@ export default async function AdminDashboard() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Recent research</h2>
-            <Link href="/admin/research" className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+            <Link href="/admin/research" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
               All docs <ArrowUpRight size={10} />
             </Link>
           </div>

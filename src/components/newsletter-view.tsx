@@ -86,7 +86,7 @@ export function NewsletterView({ digests }: { digests: NewsletterDigest[] }) {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+                            <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors">
                               {article.title}
                             </p>
                             <p className="text-sm text-zinc-500 mt-0.5 leading-relaxed">
