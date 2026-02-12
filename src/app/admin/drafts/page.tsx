@@ -7,19 +7,9 @@ export const dynamic = "force-dynamic";
 export default async function AdminDrafts() {
   const { days } = await fetchDrafts();
 
-  const allDrafts = days.flatMap((d) => d.drafts);
-  const pending = allDrafts.filter((d) => d.status === "pending").length;
-
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-semibold tracking-tight">Drafts</h1>
-        {pending > 0 && (
-          <Badge variant="outline" className="border-amber-500/30 text-amber-400 bg-amber-500/10">
-            {pending} to review
-          </Badge>
-        )}
-      </div>
+      <h1 className="text-xl font-semibold tracking-tight mb-8">Drafts</h1>
 
       {days.length === 0 ? (
         <p className="text-sm text-zinc-500">No drafts yet.</p>
