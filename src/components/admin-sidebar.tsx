@@ -18,11 +18,11 @@ import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { title: "Brain", href: "/admin/brain", icon: Brain },
   { title: "Tasks", href: "/admin/tasks", icon: CheckSquare },
   { title: "Drafts", href: "/admin/drafts", icon: PenLine },
   { title: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
   { title: "Research", href: "/admin/research", icon: FileText },
-  { title: "Brain", href: "/admin/brain", icon: Brain },
 ];
 
 export function AdminSidebar() {
@@ -37,11 +37,13 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="none" className="min-h-svh">
       <SidebarHeader className="px-4 pt-4 pb-2">
-        <img
-          src="/avatar.jpg"
-          alt="Moltzart"
-          className="w-10 h-10 rounded-full"
-        />
+        <Link href="/">
+          <img
+            src="/avatar.jpg"
+            alt="Moltzart"
+            className="w-10 h-10 rounded-full hover:opacity-80 transition-opacity cursor-pointer"
+          />
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
