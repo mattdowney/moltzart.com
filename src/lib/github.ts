@@ -122,6 +122,141 @@ export async function deleteResearchDoc(slug: string): Promise<boolean> {
   return deleteRes.ok;
 }
 
+// --- Brain (Second Brain) ---
+
+export interface BrainFile {
+  path: string;
+  name: string;
+  category: string;
+  content: string;
+  updatedAt: string | null;
+  size: number;
+}
+
+export type BrainCategory =
+  | "identity"
+  | "memory"
+  | "daily-logs"
+  | "research"
+  | "tasks"
+  | "content"
+  | "config";
+
+function categorizeBrainFile(path: string): BrainCategory {
+  if (path.startsWith("research/")) return "research";
+  if (path.startsWith("memory/") && path.match(/\d{4}-\d{2}-\d{2}\.md$/)) return "daily-logs";
+  if (path.startsWith("memory/")) return "memory";
+  if (path === "TODO.md") return "tasks";
+  if (path === "STANDING-ORDERS.md" || path === "HEARTBEAT.md") return "config";
+  if (
+    path === "SOUL.md" ||
+    path === "USER.md" ||
+    path === "IDENTITY.md" ||
+    path === "AGENTS.md"
+  )
+    return "identity";
+  if (path === "MEMORY.md") return "memory";
+  return "config";
+}
+
+function brainFileTitle(path: string, name: string): string {
+  if (name.endsWith(".md")) {
+    const base = name.replace(/\.md$/, "");
+    // Daily logs: show date nicely
+    const dateMatch = base.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateMatch) {
+      const d = new Date(`${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}T12:00:00`);
+      return d.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return base
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return name;
+}
+
+export async function fetchBrainFiles(): Promise<BrainFile[]> {
+  const files: BrainFile[] = [];
+
+  // Root-level markdown files
+  const rootRes = await ghFetch(`/repos/${REPO}/contents`);
+  if (rootRes.ok) {
+    const rootFiles = await rootRes.json();
+    const mdFiles = rootFiles.filter(
+      (f: { name: string; type: string }) =>
+        f.type === "file" && f.name.endsWith(".md") && f.name !== "README.md"
+    );
+    for (const f of mdFiles) {
+      files.push({
+        path: f.name,
+        name: brainFileTitle(f.name, f.name),
+        category: categorizeBrainFile(f.name),
+        content: "", // loaded on demand
+        updatedAt: null,
+        size: f.size,
+      });
+    }
+  }
+
+  // memory/ directory
+  const memRes = await ghFetch(`/repos/${REPO}/contents/memory`);
+  if (memRes.ok) {
+    const memFiles = await memRes.json();
+    const mdFiles = memFiles.filter(
+      (f: { name: string; type: string }) =>
+        f.type === "file" && f.name.endsWith(".md")
+    );
+    for (const f of mdFiles) {
+      const path = `memory/${f.name}`;
+      files.push({
+        path,
+        name: brainFileTitle(path, f.name),
+        category: categorizeBrainFile(path),
+        content: "",
+        updatedAt: null,
+        size: f.size,
+      });
+    }
+  }
+
+  // research/ directory
+  const resRes = await ghFetch(`/repos/${REPO}/contents/research`);
+  if (resRes.ok) {
+    const resFiles = await resRes.json();
+    const mdFiles = resFiles.filter(
+      (f: { name: string; type: string }) =>
+        f.type === "file" && f.name.endsWith(".md")
+    );
+    for (const f of mdFiles) {
+      const path = `research/${f.name}`;
+      files.push({
+        path,
+        name: brainFileTitle(path, f.name),
+        category: categorizeBrainFile(path),
+        content: "",
+        updatedAt: null,
+        size: f.size,
+      });
+    }
+  }
+
+  return files;
+}
+
+export async function fetchBrainFileContent(filePath: string): Promise<string | null> {
+  const res = await ghFetch(
+    `/repos/${REPO}/contents/${encodeURIComponent(filePath).replace(/%2F/g, "/")}`
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return Buffer.from(data.content, "base64").toString("utf-8");
+}
+
 // --- Newsletter Digests ---
 
 export interface NewsletterArticle {
