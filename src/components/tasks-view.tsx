@@ -85,7 +85,7 @@ function StatusIcon({ status }: { status: Task["status"] }) {
 function TaskItem({ task }: { task: Task }) {
   return (
     <div className="flex gap-2.5 py-1.5">
-      <div className="flex items-center h-5 shrink-0"><StatusIcon status={task.status} /></div>
+      <div className="flex items-center h-6 shrink-0"><StatusIcon status={task.status} /></div>
       <div className="min-w-0">
         <span
           className={`text-sm ${
