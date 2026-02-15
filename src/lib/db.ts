@@ -6,6 +6,13 @@ function sql() {
   return _sql;
 }
 
+/** Neon returns DATE/TIMESTAMPTZ as Date objects — coerce to YYYY-MM-DD string */
+function toDateStr(v: unknown): string {
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === "string") return v.slice(0, 10);
+  return String(v);
+}
+
 // --- Radar ---
 
 export interface DbRadarItem {
@@ -35,17 +42,17 @@ export interface DbRadarCluster {
 
 export async function fetchRadarDatesDb(): Promise<string[]> {
   const rows = await sql()`SELECT DISTINCT date FROM radar_items ORDER BY date DESC`;
-  return rows.map((r) => r.date.slice(0, 10));
+  return rows.map((r) => toDateStr(r.date));
 }
 
 export async function fetchRadarItemsByDate(date: string): Promise<DbRadarItem[]> {
   const rows = await sql()`SELECT * FROM radar_items WHERE date = ${date} ORDER BY section, created_at`;
-  return rows as unknown as DbRadarItem[];
+  return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbRadarItem[];
 }
 
 export async function fetchRadarClustersByDate(date: string): Promise<DbRadarCluster[]> {
   const rows = await sql()`SELECT * FROM radar_clusters WHERE date = ${date} ORDER BY created_at`;
-  return rows as unknown as DbRadarCluster[];
+  return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbRadarCluster[];
 }
 
 export async function insertRadarItems(
@@ -81,7 +88,7 @@ export interface DbNewsletterArticle {
 
 export async function fetchNewsletterArticlesDb(): Promise<DbNewsletterArticle[]> {
   const rows = await sql()`SELECT * FROM newsletter_articles ORDER BY digest_date DESC, created_at`;
-  return rows as unknown as DbNewsletterArticle[];
+  return rows.map((r) => ({ ...r, digest_date: toDateStr(r.digest_date) })) as unknown as DbNewsletterArticle[];
 }
 
 export async function insertNewsletterArticles(
@@ -171,7 +178,7 @@ export interface DbDraft {
 
 export async function fetchDraftsDb(): Promise<DbDraft[]> {
   const rows = await sql()`SELECT * FROM drafts ORDER BY date DESC, created_at DESC`;
-  return rows as unknown as DbDraft[];
+  return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbDraft[];
 }
 
 export async function insertDraft(
@@ -191,7 +198,8 @@ export async function insertDraft(
 export async function fetchDraftById(id: string): Promise<DbDraft | null> {
   const rows = await sql()`SELECT * FROM drafts WHERE id = ${id}`;
   if (rows.length === 0) return null;
-  return rows[0] as unknown as DbDraft;
+  const r = rows[0];
+  return { ...r, date: toDateStr(r.date) } as unknown as DbDraft;
 }
 
 export async function updateDraftStatus(
