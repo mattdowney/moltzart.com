@@ -1,4 +1,4 @@
-import { fetchRadarDates, fetchRadarDay } from "@/lib/github";
+import { fetchRadarDates, fetchRadarDay } from "@/lib/db";
 import { RadarView } from "@/components/radar-view";
 
 export const dynamic = "force-dynamic";

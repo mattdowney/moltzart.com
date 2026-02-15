@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
-import { fetchResearchList, type ResearchDoc } from "@/lib/github";
+import { fetchResearchDocs, type DbResearchDoc } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 
 export const dynamic = "force-dynamic";
+
+type ResearchDocSummary = Omit<DbResearchDoc, "content">;
 
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -46,20 +48,14 @@ function readTime(wordCount: number): string {
 
 interface DateGroup {
   label: string;
-  docs: ResearchDoc[];
+  docs: ResearchDocSummary[];
 }
 
-function groupByDate(docs: ResearchDoc[]): DateGroup[] {
-  const groups: Map<string, ResearchDoc[]> = new Map();
+function groupByDate(docs: ResearchDocSummary[]): DateGroup[] {
+  const groups: Map<string, ResearchDocSummary[]> = new Map();
 
   for (const doc of docs) {
-    if (!doc.createdAt) {
-      const key = "_unknown";
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(doc);
-      continue;
-    }
-    const d = new Date(doc.createdAt);
+    const d = new Date(doc.created_at);
     const dateKey = d.toLocaleDateString("en-US", {
       timeZone: "America/New_York",
       year: "numeric",
@@ -70,14 +66,14 @@ function groupByDate(docs: ResearchDoc[]): DateGroup[] {
     groups.get(dateKey)!.push(doc);
   }
 
-  return Array.from(groups.entries()).map(([key, docs]) => ({
-    label: key === "_unknown" ? "Unknown date" : formatDateLabel(docs[0].createdAt!),
+  return Array.from(groups.entries()).map(([, docs]) => ({
+    label: formatDateLabel(docs[0].created_at),
     docs,
   }));
 }
 
 export default async function AdminResearch() {
-  const docs = await fetchResearchList();
+  const docs = await fetchResearchDocs();
   const groups = groupByDate(docs);
 
   return (
@@ -106,9 +102,9 @@ export default async function AdminResearch() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-zinc-200">{doc.title}</span>
-                        {doc.wordCount && (
+                        {doc.word_count && (
                           <span className="text-xs font-mono text-zinc-600 shrink-0">
-                            {readTime(doc.wordCount)}
+                            {readTime(doc.word_count)}
                           </span>
                         )}
                       </div>
@@ -116,9 +112,9 @@ export default async function AdminResearch() {
                         <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{doc.excerpt}</p>
                       )}
                     </div>
-                    {doc.createdAt && (
+                    {doc.created_at && (
                       <span className="text-xs text-zinc-600 shrink-0 mt-0.5">
-                        {formatTime(doc.createdAt)}
+                        {formatTime(doc.created_at)}
                       </span>
                     )}
                     <ArrowRight

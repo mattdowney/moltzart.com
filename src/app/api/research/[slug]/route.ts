@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { fetchResearchDoc, deleteResearchDoc } from "@/lib/github";
+import { fetchResearchDocBySlug, deleteResearchDocBySlug } from "@/lib/db";
 
 async function checkAuth(req: NextRequest): Promise<boolean> {
   const cookieStore = await cookies();
@@ -24,7 +24,7 @@ export async function POST(
   }
 
   const { slug } = await params;
-  const doc = await fetchResearchDoc(slug);
+  const doc = await fetchResearchDocBySlug(slug);
   if (!doc) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
@@ -41,7 +41,7 @@ export async function DELETE(
   }
 
   const { slug } = await params;
-  const ok = await deleteResearchDoc(slug);
+  const ok = await deleteResearchDocBySlug(slug);
 
   if (!ok) {
     return NextResponse.json({ error: "Failed to delete" }, { status: 502 });

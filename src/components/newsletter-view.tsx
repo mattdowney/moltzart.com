@@ -1,6 +1,6 @@
 "use client";
 
-import type { NewsletterDigest } from "@/lib/github";
+import type { NewsletterDigest } from "@/lib/db";
 import { ExternalLink, Newspaper } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";

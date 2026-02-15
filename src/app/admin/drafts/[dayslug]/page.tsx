@@ -1,4 +1,4 @@
-import { fetchDrafts } from "@/lib/github";
+import { fetchDrafts } from "@/lib/db";
 import { DayDraftsView } from "@/components/drafts-view";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +12,7 @@ export default async function DraftDay({
   params: Promise<{ dayslug: string }>;
 }) {
   const { dayslug } = await params;
-  const { days, sha } = await fetchDrafts();
+  const { days } = await fetchDrafts();
   const day = days.find((d) => d.date === dayslug);
 
   if (!day) notFound();

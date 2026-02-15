@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Draft, DraftStatus } from "@/lib/github";
+import type { Draft, DraftStatus } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

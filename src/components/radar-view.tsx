@@ -1,6 +1,6 @@
 "use client";
 
-import type { RadarDay } from "@/lib/github";
+import type { RadarDay } from "@/lib/db";
 import { ExternalLink, Radar as RadarIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/admin/page-header";

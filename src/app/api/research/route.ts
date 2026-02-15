@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { fetchResearchList } from "@/lib/github";
+import { fetchResearchDocs } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -18,6 +18,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Wrong password" }, { status: 401 });
   }
 
-  const docs = await fetchResearchList();
+  const docs = await fetchResearchDocs();
   return NextResponse.json({ docs });
 }

@@ -1,4 +1,4 @@
-import { fetchNewsletterDigests } from "@/lib/github";
+import { fetchNewsletterDigests } from "@/lib/db";
 import { NewsletterView } from "@/components/newsletter-view";
 
 export const dynamic = "force-dynamic";

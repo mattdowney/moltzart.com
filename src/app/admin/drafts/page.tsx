@@ -1,4 +1,4 @@
-import { fetchDrafts } from "@/lib/github";
+import { fetchDrafts } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { AllDraftsView } from "@/components/drafts-view";
 

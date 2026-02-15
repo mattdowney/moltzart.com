@@ -4,13 +4,16 @@ import {
   CircleCheck,
   FileText,
 } from "lucide-react";
-import { fetchTasks, fetchDrafts, fetchResearchList } from "@/lib/github";
 import {
+  fetchTasksDb,
+  fetchDraftsDb,
+  fetchResearchDocs,
   fetchRadarDatesDb,
   fetchRadarItemsByDate,
   fetchRecentFeedback,
   fetchRecentAngles,
   fetchOpenResearchRequests,
+  type DbDraft,
 } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/admin/status-dot";
@@ -48,15 +51,15 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 export default async function AdminDashboard() {
-  const [tasksData, draftsData, radarDates, feedback, angles, researchRequests, researchDocs] =
+  const [tasks, draftsRows, radarDates, feedback, angles, researchRequests, researchDocs] =
     await Promise.all([
-      fetchTasks(),
-      fetchDrafts(),
+      fetchTasksDb(),
+      fetchDraftsDb(),
       fetchRadarDatesDb(),
       fetchRecentFeedback(),
       fetchRecentAngles(),
       fetchOpenResearchRequests(),
-      fetchResearchList(),
+      fetchResearchDocs(),
     ]);
 
   // Sequential: fetch latest radar day
@@ -66,43 +69,37 @@ export default async function AdminDashboard() {
     : null;
 
   // Task stats
-  const taskStats = { urgent: 0, active: 0, blocked: 0, completed: 0, total: 0 };
-  for (const section of tasksData.sections) {
-    const open = section.tasks.filter((t) => t.status !== "done").length;
-    const done = section.tasks.filter((t) => t.status === "done").length;
-    if (section.id === "urgent") taskStats.urgent = open;
-    if (section.id === "active") taskStats.active = open;
-    if (section.id === "blocked") taskStats.blocked = section.tasks.length;
-    taskStats.completed += done;
-    taskStats.total += section.tasks.length;
+  const taskStats = { urgent: 0, active: 0, blocked: 0, completed: 0, total: tasks.length };
+  for (const t of tasks) {
+    if (t.status === "done") taskStats.completed++;
+    if (t.priority === "urgent" && t.status !== "done") taskStats.urgent++;
+    if (t.status === "in_progress") taskStats.active++;
+    if (t.blocked_by) taskStats.blocked++;
   }
 
   // Draft stats
-  const allDrafts = draftsData.days.flatMap((d) => d.drafts);
   const draftStats = {
-    pending: allDrafts.filter((d) => d.status === "pending").length,
-    approved: allDrafts.filter((d) => d.status === "approved").length,
-    posted: allDrafts.filter((d) => d.status === "posted").length,
+    pending: draftsRows.filter((d: DbDraft) => d.status === "pending").length,
+    approved: draftsRows.filter((d: DbDraft) => d.status === "approved").length,
+    posted: draftsRows.filter((d: DbDraft) => d.status === "posted").length,
   };
 
   // Action queue
   const actions: ActionItem[] = [];
 
-  const urgentTasks = tasksData.sections
-    .find((s) => s.id === "urgent")
-    ?.tasks.filter((t) => t.status !== "done") || [];
+  const urgentTasks = tasks.filter((t) => t.priority === "urgent" && t.status !== "done");
   for (const task of urgentTasks) {
     actions.push({
       type: "urgent",
-      label: task.text,
+      label: task.title,
       source: "Tasks",
       sourceHref: "/admin/tasks",
       dotVariant: "urgent",
     });
   }
 
-  const pendingDrafts = allDrafts.filter((d) => d.status === "pending");
-  for (const draft of pendingDrafts) {
+  const pendingDrafts = draftsRows.filter((d: DbDraft) => d.status === "pending");
+  for (const draft of pendingDrafts as DbDraft[]) {
     actions.push({
       type: "pending-draft",
       label: draft.content.slice(0, 120) + (draft.content.length > 120 ? "..." : ""),
@@ -250,14 +247,14 @@ export default async function AdminDashboard() {
                 <div className="flex-1 min-w-0">
                   <span className="text-sm text-zinc-200 line-clamp-1">{doc.title}</span>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {doc.wordCount && (
+                    {doc.word_count && (
                       <span className="text-[10px] font-mono text-zinc-600">
-                        {readTime(doc.wordCount)}
+                        {readTime(doc.word_count)}
                       </span>
                     )}
-                    {doc.createdAt && (
+                    {doc.created_at && (
                       <span className="text-[10px] text-zinc-600">
-                        {formatRelativeDate(doc.createdAt)}
+                        {formatRelativeDate(doc.created_at)}
                       </span>
                     )}
                   </div>

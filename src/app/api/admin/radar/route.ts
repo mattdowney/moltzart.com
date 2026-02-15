@@ -1,4 +1,4 @@
-import { fetchRadarDay } from "@/lib/github";
+import { fetchRadarDay } from "@/lib/db";
 import { getAdminAuth } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 

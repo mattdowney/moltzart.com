@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchResearchDoc, fetchResearchList } from "@/lib/github";
+import { fetchResearchDocBySlug, fetchResearchDocs } from "@/lib/db";
 import { ResearchDocView } from "@/components/research-doc-view";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,8 @@ export default async function AdminResearchDoc({
 }) {
   const { slug } = await params;
   const [doc, allDocs] = await Promise.all([
-    fetchResearchDoc(slug),
-    fetchResearchList(),
+    fetchResearchDocBySlug(slug),
+    fetchResearchDocs(),
   ]);
 
   if (!doc) notFound();
