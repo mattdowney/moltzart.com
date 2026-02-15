@@ -16,13 +16,13 @@ export function RadarHighlights({ date, items }: RadarHighlightsProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
         <div className="flex items-center gap-2">
-          <Radar size={14} className="text-zinc-500" />
+          <Radar size={14} className="text-teal-500" />
           <span className="text-sm font-medium text-zinc-200">Today&apos;s Radar</span>
-          <span className="text-xs text-zinc-600 font-mono">{date}</span>
+          {date !== "—" && <span className="text-xs text-zinc-600 font-mono">{date}</span>}
         </div>
         <Link
           href="/admin/radar"
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+          className="text-xs text-zinc-500 hover:text-teal-400 transition-colors flex items-center gap-1"
         >
           All scans <ArrowUpRight size={10} />
         </Link>

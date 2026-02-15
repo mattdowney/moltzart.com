@@ -16,13 +16,33 @@ import { CheckSquare, FileText, LayoutDashboard, LogOut, Newspaper, PenLine, Rad
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const navItems = [
-  { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Tasks", href: "/admin/tasks", icon: CheckSquare },
-  { title: "Content Ideas", href: "/admin/drafts", icon: PenLine },
-  { title: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
-  { title: "Radar", href: "/admin/radar", icon: Radar },
-  { title: "Research", href: "/admin/research", icon: FileText },
+const navGroups = [
+  {
+    label: "",
+    items: [
+      { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Inputs",
+    items: [
+      { title: "Radar", href: "/admin/radar", icon: Radar },
+      { title: "Research", href: "/admin/research", icon: FileText },
+    ],
+  },
+  {
+    label: "Outputs",
+    items: [
+      { title: "Content Ideas", href: "/admin/drafts", icon: PenLine },
+      { title: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { title: "Tasks", href: "/admin/tasks", icon: CheckSquare },
+    ],
+  },
 ];
 
 export function AdminSidebar() {
@@ -46,29 +66,32 @@ export function AdminSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={
-                      item.href === "/admin"
-                        ? pathname === "/admin"
-                        : pathname.startsWith(item.href)
-                    }
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label || "overview"}>
+            {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        item.href === "/admin"
+                          ? pathname === "/admin"
+                          : pathname.startsWith(item.href)
+                      }
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>

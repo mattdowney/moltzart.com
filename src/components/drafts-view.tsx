@@ -10,7 +10,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { EmptyState } from "@/components/admin/empty-state";
-import { Inbox } from "lucide-react";
+import { Inbox, PenLine } from "lucide-react";
 
 function statusBadge(status: DraftStatus) {
   switch (status) {
@@ -347,11 +347,23 @@ export function AllDraftsView({ drafts: initialDrafts }: { drafts: Draft[] }) {
   }, [focusIdx, navigable, handleAction]);
 
   if (drafts.length === 0) {
-    return <EmptyState icon={Inbox} message="No drafts yet." />;
+    return (
+      <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+        <div className="flex items-center px-4 py-3 border-b border-zinc-800/30">
+          <div className="flex items-center gap-2">
+            <PenLine size={14} className="text-teal-500" />
+            <span className="text-sm font-medium text-zinc-200">Content Ideas</span>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center py-8">
+          <EmptyState icon={Inbox} message="No drafts yet." />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Keyboard hint */}
       {pending.length > 0 && (
         <p className="text-[10px] text-zinc-600 font-mono">
@@ -361,11 +373,15 @@ export function AllDraftsView({ drafts: initialDrafts }: { drafts: Draft[] }) {
 
       {/* Pending drafts (review queue) */}
       {pending.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-            Pending review ({pending.length})
-          </h2>
-          <div className="space-y-4">
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <PenLine size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">Pending review</span>
+              <span className="text-xs text-zinc-600 font-mono">{pending.length}</span>
+            </div>
+          </div>
+          <div className="p-4 space-y-4">
             {pending.map((draft) => {
               const navIdx = navigable.indexOf(draft);
               return (
@@ -389,11 +405,15 @@ export function AllDraftsView({ drafts: initialDrafts }: { drafts: Draft[] }) {
 
       {/* Approved drafts */}
       {approved.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-            Approved ({approved.length})
-          </h2>
-          <div className="space-y-4">
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <PenLine size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">Approved</span>
+              <span className="text-xs text-zinc-600 font-mono">{approved.length}</span>
+            </div>
+          </div>
+          <div className="p-4 space-y-4">
             {approved.map((draft) => {
               const navIdx = navigable.indexOf(draft);
               return (
@@ -417,11 +437,15 @@ export function AllDraftsView({ drafts: initialDrafts }: { drafts: Draft[] }) {
 
       {/* Posted drafts */}
       {posted.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-            Posted ({posted.length})
-          </h2>
-          <div className="space-y-4">
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <PenLine size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">Posted</span>
+              <span className="text-xs text-zinc-600 font-mono">{posted.length}</span>
+            </div>
+          </div>
+          <div className="p-4 space-y-4">
             {posted.map((draft) => {
               const navIdx = navigable.indexOf(draft);
               return (

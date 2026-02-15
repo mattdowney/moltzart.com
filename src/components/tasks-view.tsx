@@ -8,11 +8,11 @@ import {
   Circle,
   CircleDot,
   CheckCircle2,
+  ListTodo,
   RefreshCw,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { PageHeader } from "@/components/admin/page-header";
 
 const priorityConfig: Record<
   string,
@@ -137,26 +137,22 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
   };
 
   return (
-    <div className="max-w-4xl">
-      <PageHeader
-        title="Tasks"
-        subtitle={
-          <span className="flex items-center gap-3 text-xs">
-            <span>
-              <span className="font-mono font-medium text-zinc-300">{stats.open}</span>{" "}
-              <span className="text-zinc-500">open</span>
+    <div>
+      <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+          <div className="flex items-center gap-2">
+            <ListTodo size={14} className="text-teal-500" />
+            <span className="text-sm font-medium text-zinc-200">Tasks</span>
+            <span className="flex items-center gap-2 text-xs">
+              <span className="font-mono text-zinc-300">{stats.open}</span>
+              <span className="text-zinc-600">open</span>
+              <span className="font-mono text-amber-400">{stats.inProgress}</span>
+              <span className="text-zinc-600">in progress</span>
+              <span className="font-mono text-emerald-400">{stats.done}</span>
+              <span className="text-zinc-600">done</span>
             </span>
-            <span>
-              <span className="font-mono font-medium text-amber-400">{stats.inProgress}</span>{" "}
-              <span className="text-zinc-500">in progress</span>
-            </span>
-            <span>
-              <span className="font-mono font-medium text-emerald-400">{stats.done}</span>{" "}
-              <span className="text-zinc-500">done</span>
-            </span>
-          </span>
-        }
-        actions={
+          </div>
           <button
             onClick={refresh}
             disabled={loading}
@@ -165,13 +161,14 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
-        }
-      />
-      <div className="border border-zinc-800/50 rounded-lg bg-zinc-900/30 divide-y divide-zinc-800/30">
+        </div>
+
         {data.length === 0 ? (
           <p className="text-sm text-zinc-500 py-8 text-center">No tasks yet.</p>
         ) : (
-          data.map((task) => <TaskRow key={task.id} task={task} />)
+          <div className="divide-y divide-zinc-800/30">
+            {data.map((task) => <TaskRow key={task.id} task={task} />)}
+          </div>
         )}
       </div>
     </div>

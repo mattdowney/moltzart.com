@@ -2,7 +2,6 @@
 
 import type { NewsletterDigest } from "@/lib/db";
 import { ExternalLink, Newspaper } from "lucide-react";
-import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 
 const sourceColors: Record<string, string> = {
@@ -34,58 +33,66 @@ export function NewsletterView({ digests }: { digests: NewsletterDigest[] }) {
 
   if (digests.length === 0) {
     return (
-      <div className="max-w-4xl">
-        <PageHeader title="Newsletter" />
-        <EmptyState icon={Newspaper} message="No picks yet." />
+      <div>
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          <div className="flex items-center px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <Newspaper size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">Newsletter</span>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center py-8">
+            <EmptyState icon={Newspaper} message="No picks yet." />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl">
-      <PageHeader
-        title="Newsletter"
-        subtitle={`${totalArticles} articles across ${digests.length} days`}
-      />
-
-      <div className="space-y-8">
-        {digests.map((digest) => (
-          <div key={digest.date}>
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 px-1">
-              {digest.label}
-            </h2>
-            <div className="space-y-1">
-              {digest.articles.map((article, idx) => (
-                <a
-                  key={idx}
-                  href={article.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block px-4 py-3 rounded-lg hover:bg-zinc-800/40 transition-colors group"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <SourceBadge source={article.source} />
-                        <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
-                          {article.title}
-                        </p>
-                      </div>
-                      <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
-                        {article.description}
-                      </p>
-                    </div>
-                    <ExternalLink
-                      size={14}
-                      className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 mt-1"
-                    />
-                  </div>
-                </a>
-              ))}
+    <div className="space-y-4">
+      {digests.map((digest) => (
+        <div key={digest.date} className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <Newspaper size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">{digest.label}</span>
+              <span className="text-xs text-zinc-600 font-mono">{digest.articles.length} articles</span>
             </div>
           </div>
-        ))}
-      </div>
+
+          <div className="divide-y divide-zinc-800/20">
+            {digest.articles.map((article, idx) => (
+              <a
+                key={idx}
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-3 hover:bg-zinc-800/40 transition-colors group"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <SourceBadge source={article.source} />
+                      <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
+                        {article.title}
+                      </p>
+                    </div>
+                    <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
+                      {article.description}
+                    </p>
+                  </div>
+                  <ExternalLink
+                    size={14}
+                    className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 mt-1"
+                  />
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

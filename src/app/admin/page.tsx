@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowRight,
+  ArrowUpRight,
   CircleCheck,
   FileText,
 } from "lucide-react";
@@ -166,18 +168,32 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      {/* Row 2: Action Queue (full width, only if items exist) */}
-      {actions.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-            Needs attention
-          </h2>
-          <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 divide-y divide-zinc-800/30">
+      {/* Row 2: Action Queue */}
+      <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="text-teal-500" />
+            <span className="text-sm font-medium text-zinc-200">Action Queue</span>
+            {actions.length > 0 && (
+              <span className="text-xs text-zinc-600 font-mono">{actions.length} items</span>
+            )}
+          </div>
+          <Link
+            href="/admin/tasks"
+            className="text-xs text-zinc-500 hover:text-teal-400 transition-colors flex items-center gap-1"
+          >
+            All tasks <ArrowUpRight size={10} />
+          </Link>
+        </div>
+
+        {actions.length > 0 ? (
+          <div className="divide-y divide-zinc-800/20">
             {actions.map((item, i) => (
               <Link
                 key={i}
                 href={item.sourceHref}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors"
               >
                 <StatusDot variant={item.dotVariant} pulse={item.type === "urgent"} />
                 <span className="text-sm text-zinc-200 flex-1 min-w-0 truncate">
@@ -192,12 +208,12 @@ export default async function AdminDashboard() {
               </Link>
             ))}
           </div>
-        </div>
-      )}
-
-      {actions.length === 0 && (
-        <EmptyState icon={CircleCheck} message="All clear — nothing needs attention" />
-      )}
+        ) : (
+          <div className="flex-1 flex items-center justify-center py-8">
+            <EmptyState icon={CircleCheck} message="All clear — nothing needs attention" />
+          </div>
+        )}
+      </div>
 
       {/* Row 3: Radar highlights */}
       <RadarHighlights
@@ -214,7 +230,7 @@ export default async function AdminDashboard() {
             </h2>
             <Link
               href="/admin/research"
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-xs text-zinc-500 hover:text-teal-400 transition-colors"
             >
               View all
             </Link>

@@ -3,7 +3,6 @@
 import type { RadarDay } from "@/lib/db";
 import { ExternalLink, Radar as RadarIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -85,47 +84,53 @@ export function RadarView({ dates, initialData, initialDate }: Props) {
   const totalItems = filteredSections.reduce((sum, s) => sum + s.items.length, 0);
 
   return (
-    <div className="max-w-4xl">
-      <PageHeader
-        title="Radar"
-        subtitle={data ? `${data.label} · ${totalItems} items` : undefined}
-      />
+    <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+        <div className="flex items-center gap-2">
+          <RadarIcon size={14} className="text-teal-500" />
+          <span className="text-sm font-medium text-zinc-200">Radar</span>
+          {data && (
+            <span className="text-xs text-zinc-600 font-mono">{data.label} · {totalItems} items</span>
+          )}
+        </div>
 
-      {/* Date strip */}
-      <div className="flex gap-2 flex-wrap mb-4">
-        {visibleDates.map((d) => {
-          const label = d.slice(5); // MM-DD
-          const active = d === currentDate;
-          return (
-            <button
-              key={d}
-              onClick={() => navigate(d)}
-              className={`px-3 py-1.5 rounded-md text-xs font-mono transition-colors ${
-                active
-                  ? "bg-zinc-800 text-zinc-200 border border-zinc-700"
-                  : "bg-zinc-900/30 text-zinc-500 border border-zinc-800/50 hover:text-zinc-300 hover:border-zinc-700"
-              }`}
+        {/* Date strip */}
+        <div className="flex gap-1.5 flex-wrap">
+          {visibleDates.map((d) => {
+            const label = d.slice(5); // MM-DD
+            const active = d === currentDate;
+            return (
+              <button
+                key={d}
+                onClick={() => navigate(d)}
+                className={`px-2.5 py-1 rounded-md text-xs font-mono transition-colors ${
+                  active
+                    ? "bg-teal-500/10 text-teal-400 border border-teal-500/30"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+          {dates.length > 7 && (
+            <select
+              value={currentDate}
+              onChange={(e) => navigate(e.target.value)}
+              className="text-xs font-mono bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 text-zinc-500"
             >
-              {label}
-            </button>
-          );
-        })}
-        {dates.length > 7 && (
-          <select
-            value={currentDate}
-            onChange={(e) => navigate(e.target.value)}
-            className="text-xs font-mono bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1.5 text-zinc-500"
-          >
-            {dates.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        )}
+              {dates.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      {/* Lane filter toggle group */}
+      {/* Lane filter */}
       {allLanes.length > 0 && (
-        <div className="mb-4">
+        <div className="px-4 py-2 border-b border-zinc-800/30">
           <ToggleGroup
             type="multiple"
             value={activeLanes}
@@ -149,23 +154,28 @@ export function RadarView({ dates, initialData, initialDate }: Props) {
       )}
 
       {loading ? (
-        <p className="text-sm text-zinc-500">Loading...</p>
+        <p className="text-sm text-zinc-500 py-8 text-center">Loading...</p>
       ) : !data || filteredSections.length === 0 ? (
-        <EmptyState icon={RadarIcon} message={activeLanes.length > 0 ? "No items match the selected lanes." : "No radar data for this date."} />
+        <div className="flex-1 flex items-center justify-center py-8">
+          <EmptyState icon={RadarIcon} message={activeLanes.length > 0 ? "No items match the selected lanes." : "No radar data for this date."} />
+        </div>
       ) : (
-        <div className="space-y-8">
-          {filteredSections.map((section) => (
+        <div>
+          {filteredSections.map((section, sIdx) => (
             <div key={section.heading}>
-              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 px-1">
-                {section.heading}
-              </h2>
-              <div className="space-y-1">
+              {/* Section subheader */}
+              <div className={`px-4 py-2 ${sIdx > 0 ? "border-t border-zinc-800/30" : ""}`}>
+                <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-medium">
+                  {section.heading} · {section.items.length} items
+                </span>
+              </div>
+              <div className="divide-y divide-zinc-800/20">
                 {section.items.map((item, idx) => {
                   const laneBg = laneColors[item.lane]?.bg || "";
                   return (
                     <div
                       key={idx}
-                      className={`px-4 py-3 rounded-lg hover:bg-zinc-800/40 transition-colors group ${laneBg}`}
+                      className={`px-4 py-3 hover:bg-zinc-800/40 transition-colors group ${laneBg}`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1 min-w-0">

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
 import { fetchResearchDocs, type DbResearchDoc } from "@/lib/db";
-import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 
 export const dynamic = "force-dynamic";
@@ -77,56 +76,66 @@ export default async function AdminResearch() {
   const groups = groupByDate(docs);
 
   return (
-    <div className="max-w-4xl">
-      <PageHeader
-        title="Research"
-        subtitle={docs.length > 0 ? `${docs.length} documents` : undefined}
-      />
+    <div className="space-y-4">
       {docs.length === 0 ? (
-        <EmptyState icon={FileText} message="No research documents yet." />
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+          <div className="flex items-center px-4 py-3 border-b border-zinc-800/30">
+            <div className="flex items-center gap-2">
+              <FileText size={14} className="text-teal-500" />
+              <span className="text-sm font-medium text-zinc-200">Research</span>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center py-8">
+            <EmptyState icon={FileText} message="No research documents yet." />
+          </div>
+        </div>
       ) : (
-        <div className="space-y-6">
-          {groups.map((group) => (
-            <div key={group.label}>
-              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 px-1">
-                {group.label}
-              </h2>
-              <div className="space-y-1.5">
-                {group.docs.map((doc) => (
-                  <Link
-                    key={doc.slug}
-                    href={`/admin/research/${doc.slug}`}
-                    className="flex items-start gap-3 px-4 py-3 border border-zinc-800/50 rounded-lg bg-zinc-900/30 hover:bg-zinc-800/40 transition-colors group"
-                  >
-                    <FileText size={16} className="text-zinc-500 shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-zinc-200">{doc.title}</span>
-                        {doc.word_count && (
-                          <span className="text-xs font-mono text-zinc-600 shrink-0">
-                            {readTime(doc.word_count)}
-                          </span>
-                        )}
-                      </div>
-                      {doc.excerpt && (
-                        <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{doc.excerpt}</p>
-                      )}
-                    </div>
-                    {doc.created_at && (
-                      <span className="text-xs text-zinc-600 shrink-0 mt-0.5">
-                        {formatTime(doc.created_at)}
-                      </span>
-                    )}
-                    <ArrowRight
-                      size={14}
-                      className="text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0 mt-0.5"
-                    />
-                  </Link>
-                ))}
+        groups.map((group) => (
+          <div key={group.label} className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
+              <div className="flex items-center gap-2">
+                <FileText size={14} className="text-teal-500" />
+                <span className="text-sm font-medium text-zinc-200">{group.label}</span>
+                <span className="text-xs text-zinc-600 font-mono">{group.docs.length} docs</span>
               </div>
             </div>
-          ))}
-        </div>
+
+            <div className="divide-y divide-zinc-800/20">
+              {group.docs.map((doc) => (
+                <Link
+                  key={doc.slug}
+                  href={`/admin/research/${doc.slug}`}
+                  className="flex items-start gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors group"
+                >
+                  <FileText size={16} className="text-zinc-500 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-zinc-200">{doc.title}</span>
+                      {doc.word_count && (
+                        <span className="text-xs font-mono text-zinc-600 shrink-0">
+                          {readTime(doc.word_count)}
+                        </span>
+                      )}
+                    </div>
+                    {doc.excerpt && (
+                      <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{doc.excerpt}</p>
+                    )}
+                  </div>
+                  {doc.created_at && (
+                    <span className="text-xs text-zinc-600 shrink-0 mt-0.5">
+                      {formatTime(doc.created_at)}
+                    </span>
+                  )}
+                  <ArrowRight
+                    size={14}
+                    className="text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0 mt-0.5"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))
       )}
     </div>
   );

@@ -18,7 +18,7 @@ export function StatCard({ title, value, subtitle, href, children }: StatCardPro
     >
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">{title}</span>
-        <ArrowUpRight size={12} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
+        <ArrowUpRight size={12} className="text-zinc-700 group-hover:text-teal-400 transition-colors" />
       </div>
       <div className="text-2xl font-semibold tracking-tight text-zinc-100 font-mono">{value}</div>
       {subtitle && (
