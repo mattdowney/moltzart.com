@@ -27,7 +27,7 @@ src/
     ui/                   # shadcn/ui components
   lib/
     utils.ts              # cn() helper
-    github.ts             # GitHub API integration
+    db.ts                 # Neon Postgres data layer
     admin-auth.ts         # Admin authentication
 docs/
   project/
@@ -49,8 +49,9 @@ npm run lint      # ESLint
 - **UI patterns are documented** — see `UI-GUIDELINES.md` for colors, typography, spacing, components, and animation rules
 - **shadcn/ui** — components live in `src/components/ui/`, add new ones via `npx shadcn@latest add <component>`
 - **Path aliases** — `@/components`, `@/lib`, `@/hooks` (configured in tsconfig)
-- **Admin pages** use `max-w-4xl` containers; public pages use `max-w-xl`
-- **Shared admin components** live in `src/components/admin/` (PageHeader, MarkdownRenderer, EmptyState, StatusDot)
+- **Admin pages** use full-width card layouts; public pages use `max-w-xl`
+- **Accent color** — teal (sidebar active state, card header icons, action links)
+- **Shared admin components** live in `src/components/admin/` (MarkdownRenderer, EmptyState, StatusDot)
 
 ## Deployment Rules
 
