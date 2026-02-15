@@ -129,7 +129,7 @@ function DraftCard({
         <span>{draft.content.length} chars</span>
         {draft.tweetId && (
           <a
-            href={`https://x.com/moltzart/status/${draft.tweetId}`}
+            href={`https://x.com/mattdowney/status/${draft.tweetId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-zinc-400 underline transition-colors"

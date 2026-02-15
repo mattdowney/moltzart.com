@@ -1,5 +1,16 @@
 # Project Log
 
+## 2026-02-15 (session 3)
+- Dashboard redesign: rewrote `/admin/page.tsx` as 5-zone intelligence hub — metrics strip (4 stat tiles), action queue (urgent tasks + pending drafts + research requests), radar highlights, signals/angles sidebar, recent research grid. Removed `max-w-4xl` constraint to use full width.
+- Added 3 new DB functions (`fetchRecentFeedback`, `fetchRecentAngles`, `fetchOpenResearchRequests`) + interfaces. Created 3 new components in `src/components/dashboard/`.
+- Drafts pivot: renamed "Drafts" → "Content Ideas" in sidebar, drafts page title, and dashboard. Updated X link from `@moltzart` → `@mattdowney`.
+- **Decision:** Wiped all DB data and dropped `radar_clusters` table. Migration from GitHub markdown had broken data — `why_bullets` empty (regex matched `- Why:` but markdown says `- Why Matt cares:`), cluster fields all null. Ingest API pipeline verified correct for all 5 endpoints; Pica's next scans will produce clean data.
+- **Decision:** Clusters concept removed entirely — no ingest endpoint existed, Pica had no instructions to post them. Can revisit later if needed.
+
+## 2026-02-15 (session 2)
+- Fixed production crash on `/admin/radar` — Neon serverless driver returns `DATE` columns as JS Date objects, not strings. Code calling `.slice(0, 10)` threw `TypeError`. Added `toDateStr()` helper in `db.ts` and normalized all 6 fetch functions.
+- This was the last bug from the GitHub → Neon data migration (completed earlier this session: schema, 6 ingest API routes, read path migration, data backfill, agent instruction updates across 7 files in openclaw-home).
+
 ## 2026-02-15
 - Pica agent audit: diagnosed 6 systemic issues — 2 crons likely unregistered (8 AM X Scan, Wednesday Newsletter Reminder), content-feedback.jsonl being skipped by Haiku on most sessions, no research request mechanism, newsletter-angles never produced, broken newsletter sources. Moltzart applied all 6 fixes on Mac Mini.
 - Fixed radar parser bug in `src/lib/github.ts` — `---` separators in content-radar markdown were flushing the current section, causing items after the separator to render as title-only. Now `---` lines are skipped without breaking section state.

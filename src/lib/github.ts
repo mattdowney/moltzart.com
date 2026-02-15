@@ -1,7 +1,6 @@
 import {
   fetchRadarDatesDb,
   fetchRadarItemsByDate,
-  fetchRadarClustersByDate,
   fetchNewsletterArticlesDb,
   fetchDraftsDb,
   updateDraftStatus as dbUpdateDraftStatus,
@@ -853,7 +852,6 @@ export interface RadarDay {
   date: string;
   label: string;
   sections: { heading: string; items: RadarItem[] }[];
-  clusters?: string[];
   rawMarkdown: string;
   scanSources?: string[];
   itemCount?: number;
@@ -1055,12 +1053,9 @@ export async function fetchRadarDates(): Promise<string[]> {
 }
 
 export async function fetchRadarDay(date: string): Promise<RadarDay | null> {
-  const [items, clusters] = await Promise.all([
-    fetchRadarItemsByDate(date),
-    fetchRadarClustersByDate(date),
-  ]);
+  const items = await fetchRadarItemsByDate(date);
 
-  if (items.length === 0 && clusters.length === 0) return null;
+  if (items.length === 0) return null;
 
   // Group items by section, preserving order
   const sectionMap = new Map<string, RadarItem[]>();
@@ -1082,8 +1077,6 @@ export async function fetchRadarDay(date: string): Promise<RadarDay | null> {
     items: sectionItems,
   }));
 
-  const clusterTitles = clusters.map((c) => c.title);
-
   const d = new Date(date + "T12:00:00");
   const now = new Date();
   const today = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
@@ -1097,7 +1090,6 @@ export async function fetchRadarDay(date: string): Promise<RadarDay | null> {
     date,
     label,
     sections,
-    clusters: clusterTitles.length > 0 ? clusterTitles : undefined,
     rawMarkdown: "",
     scanSources: scanSources.size > 0 ? Array.from(scanSources) : undefined,
     itemCount: items.length,

@@ -20,7 +20,7 @@ const navItems = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { title: "Brain", href: "/admin/brain", icon: Brain },
   { title: "Tasks", href: "/admin/tasks", icon: CheckSquare },
-  { title: "Drafts", href: "/admin/drafts", icon: PenLine },
+  { title: "Content Ideas", href: "/admin/drafts", icon: PenLine },
   { title: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
   { title: "Radar", href: "/admin/radar", icon: Radar },
   { title: "Research", href: "/admin/research", icon: FileText },

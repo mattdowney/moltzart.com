@@ -1,7 +1,7 @@
 "use client";
 
 import type { RadarDay } from "@/lib/github";
-import { ExternalLink, Radar as RadarIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { ExternalLink, Radar as RadarIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -39,8 +39,6 @@ export function RadarView({ dates, initialData, initialDate }: Props) {
   const [data, setData] = useState<RadarDay | null>(initialData);
   const [loading, setLoading] = useState(false);
   const [activeLanes, setActiveLanes] = useState<string[]>([]);
-  const [clustersOpen, setClustersOpen] = useState(false);
-
   // Show last 7 dates as pills
   const visibleDates = dates.slice(0, 7);
 
@@ -147,40 +145,6 @@ export function RadarView({ dates, initialData, initialDate }: Props) {
               );
             })}
           </ToggleGroup>
-        </div>
-      )}
-
-      {/* Topic clusters (collapsible, at top) */}
-      {data?.clusters && data.clusters.length > 0 && (
-        <div className="mb-6 border border-zinc-800/30 rounded-lg bg-zinc-900/20">
-          <button
-            onClick={() => setClustersOpen(!clustersOpen)}
-            className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-zinc-800/20 transition-colors rounded-lg"
-          >
-            {clustersOpen ? (
-              <ChevronDown size={12} className="text-zinc-600" />
-            ) : (
-              <ChevronRight size={12} className="text-zinc-600" />
-            )}
-            <span className="text-xs font-medium text-zinc-500 flex-1 text-left">
-              Topic Clusters
-            </span>
-            <span className="text-xs font-mono text-zinc-600">{data.clusters.length}</span>
-          </button>
-          {clustersOpen && (
-            <div className="px-4 pb-3 border-t border-zinc-800/20">
-              <div className="flex flex-wrap gap-2 pt-2">
-                {data.clusters.map((cluster, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                  >
-                    {cluster}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

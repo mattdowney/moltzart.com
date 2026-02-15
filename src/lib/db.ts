@@ -28,18 +28,6 @@ export interface DbRadarItem {
   created_at: string;
 }
 
-export interface DbRadarCluster {
-  id: string;
-  date: string;
-  title: string;
-  source_count: number | null;
-  signal: string | null;
-  pattern: string | null;
-  matt_angle: string | null;
-  confidence: string | null;
-  created_at: string;
-}
-
 export async function fetchRadarDatesDb(): Promise<string[]> {
   const rows = await sql()`SELECT DISTINCT date FROM radar_items ORDER BY date DESC`;
   return rows.map((r) => toDateStr(r.date));
@@ -48,11 +36,6 @@ export async function fetchRadarDatesDb(): Promise<string[]> {
 export async function fetchRadarItemsByDate(date: string): Promise<DbRadarItem[]> {
   const rows = await sql()`SELECT * FROM radar_items WHERE date = ${date} ORDER BY section, created_at`;
   return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbRadarItem[];
-}
-
-export async function fetchRadarClustersByDate(date: string): Promise<DbRadarCluster[]> {
-  const rows = await sql()`SELECT * FROM radar_clusters WHERE date = ${date} ORDER BY created_at`;
-  return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbRadarCluster[];
 }
 
 export async function insertRadarItems(
@@ -109,6 +92,23 @@ export async function insertNewsletterArticles(
 
 // --- Newsletter Angles ---
 
+export interface DbNewsletterAngle {
+  id: string;
+  date: string;
+  angle: string;
+  supporting_items: string[];
+  created_at: string;
+}
+
+export async function fetchRecentAngles(limit = 7): Promise<DbNewsletterAngle[]> {
+  const rows = await sql()`
+    SELECT * FROM newsletter_angles
+    ORDER BY date DESC, created_at DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(r => ({ ...r, date: toDateStr(r.date) })) as unknown as DbNewsletterAngle[];
+}
+
 export async function insertNewsletterAngles(
   date: string,
   angles: { angle: string; supporting_items?: string[] }[]
@@ -127,6 +127,25 @@ export async function insertNewsletterAngles(
 
 // --- Content Feedback ---
 
+export interface DbContentFeedback {
+  id: string;
+  date: string;
+  signal: string;
+  topic: string;
+  source: string | null;
+  reason: string | null;
+  created_at: string;
+}
+
+export async function fetchRecentFeedback(limit = 10): Promise<DbContentFeedback[]> {
+  const rows = await sql()`
+    SELECT * FROM content_feedback
+    ORDER BY date DESC, created_at DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(r => ({ ...r, date: toDateStr(r.date) })) as unknown as DbContentFeedback[];
+}
+
 export async function insertContentFeedback(
   date: string,
   signal: string,
@@ -143,6 +162,28 @@ export async function insertContentFeedback(
 }
 
 // --- Research Requests ---
+
+export interface DbResearchRequest {
+  id: string;
+  title: string;
+  requested_by: string;
+  priority: string;
+  details: string | null;
+  status: string;
+  created_at: string;
+}
+
+export async function fetchOpenResearchRequests(): Promise<DbResearchRequest[]> {
+  return await sql()`
+    SELECT * FROM research_requests
+    WHERE status IS NULL OR status != 'completed'
+    ORDER BY
+      CASE WHEN priority = 'high' THEN 0
+           WHEN priority = 'normal' THEN 1
+           ELSE 2 END,
+      created_at DESC
+  ` as unknown as DbResearchRequest[];
+}
 
 export async function insertResearchRequest(
   title: string,

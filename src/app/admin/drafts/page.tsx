@@ -11,7 +11,7 @@ export default async function AdminDrafts() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Drafts"
+        title="Content Ideas"
         subtitle={
           allDrafts.length > 0
             ? `${allDrafts.filter((d) => d.status === "pending").length} pending · ${allDrafts.filter((d) => d.status === "approved").length} approved · ${allDrafts.filter((d) => d.status === "posted").length} posted`
