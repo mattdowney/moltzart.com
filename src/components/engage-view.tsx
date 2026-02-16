@@ -2,8 +2,27 @@
 
 import type { DbEngageItem } from "@/lib/db";
 import { ExternalLink, MessageCircle, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/admin/empty-state";
+
+const PRIORITY_TIERS = [
+  { max: 1, label: "Top Picks", accent: true },
+  { max: 2, label: "Worth Engaging", accent: false },
+  { max: Infinity, label: "Also Noted", accent: false },
+] as const;
+
+function groupByTier(items: DbEngageItem[]) {
+  const tiers: { label: string; accent: boolean; items: DbEngageItem[] }[] = [];
+  for (const tier of PRIORITY_TIERS) {
+    const matched = items.filter(
+      (i) => i.priority <= tier.max && !tiers.flatMap((t) => t.items).includes(i)
+    );
+    if (matched.length > 0) {
+      tiers.push({ label: tier.label, accent: tier.accent, items: matched });
+    }
+  }
+  return tiers;
+}
 
 interface Props {
   dates: string[];
@@ -16,6 +35,8 @@ export function EngageView({ dates, initialItems, initialDate }: Props) {
   const [items, setItems] = useState<DbEngageItem[]>(initialItems);
   const [loading, setLoading] = useState(false);
   const visibleDates = dates.slice(0, 7);
+
+  const tiers = useMemo(() => groupByTier(items), [items]);
 
   async function navigate(date: string) {
     setCurrentDate(date);
@@ -86,40 +107,54 @@ export function EngageView({ dates, initialItems, initialDate }: Props) {
           <EmptyState icon={MessageCircle} message="No reply targets for this date." />
         </div>
       ) : (
-        <div className="divide-y divide-zinc-800/20">
-          {items.map((item) => (
-            <div key={item.id} className="px-4 py-3 hover:bg-zinc-800/40 transition-colors group">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-bold mt-0.5">
-                  {item.priority || "–"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {item.author && (
-                      <span className="text-xs font-medium text-teal-400">{item.author}</span>
-                    )}
-                    {item.tweet_url && (
-                      <a href={item.tweet_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
-                        <ExternalLink size={10} />
-                        <span>tweet</span>
-                      </a>
-                    )}
+        <div>
+          {tiers.map((tier, tIdx) => (
+            <div key={tier.label}>
+              {/* Tier header */}
+              <div className={`px-4 py-2 ${tIdx > 0 ? "border-t border-zinc-800/30" : ""}`}>
+                <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-medium">
+                  {tier.label} · {tier.items.length}
+                </span>
+              </div>
+
+              {/* Tier items */}
+              <div className="divide-y divide-zinc-800/20">
+                {tier.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`px-4 py-3 hover:bg-zinc-800/40 transition-colors group ${
+                      tier.accent ? "border-l-2 border-l-teal-500/40" : ""
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {item.author && (
+                          <span className="text-xs font-medium text-teal-400">{item.author}</span>
+                        )}
+                        {item.tweet_url && (
+                          <a href={item.tweet_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
+                            <ExternalLink size={10} />
+                            <span>tweet</span>
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-sm text-zinc-200 leading-relaxed mb-1">{item.title}</p>
+                      {item.context && (
+                        <p className="text-sm text-zinc-500 leading-relaxed mb-2">{item.context}</p>
+                      )}
+                      {item.suggested_angles && item.suggested_angles.length > 0 && (
+                        <ul className="space-y-0.5">
+                          {item.suggested_angles.map((angle, aIdx) => (
+                            <li key={aIdx} className="flex gap-2 text-sm text-zinc-400">
+                              <ArrowUpRight size={12} className="text-teal-500/50 shrink-0 mt-1" />
+                              <span>{angle}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-zinc-200 leading-relaxed mb-1">{item.title}</p>
-                  {item.context && (
-                    <p className="text-sm text-zinc-500 leading-relaxed mb-2">{item.context}</p>
-                  )}
-                  {item.suggested_angles && item.suggested_angles.length > 0 && (
-                    <ul className="space-y-0.5">
-                      {item.suggested_angles.map((angle, aIdx) => (
-                        <li key={aIdx} className="flex gap-2 text-sm text-zinc-400">
-                          <ArrowUpRight size={12} className="text-sky-500/60 shrink-0 mt-1" />
-                          <span>{angle}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
           ))}
