@@ -63,33 +63,39 @@ export function NewsletterView({ digests }: { digests: NewsletterDigest[] }) {
           </div>
 
           <div className="divide-y divide-zinc-800/20">
-            {digest.articles.map((article, idx) => (
-              <a
-                key={idx}
-                href={article.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block px-4 py-3 hover:bg-zinc-800/40 transition-colors group"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <SourceBadge source={article.source} />
-                      <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
-                        {article.title}
+            {digest.articles.map((article, idx) => {
+              const Wrapper = article.link ? "a" : "div";
+              const linkProps = article.link
+                ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
+                : {};
+              return (
+                <Wrapper
+                  key={idx}
+                  {...linkProps}
+                  className="block px-4 py-3 hover:bg-zinc-800/40 transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <SourceBadge source={article.source} />
+                        <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
+                          {article.title}
+                        </p>
+                      </div>
+                      <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
+                        {article.description}
                       </p>
                     </div>
-                    <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
-                      {article.description}
-                    </p>
+                    {article.link && (
+                      <ExternalLink
+                        size={14}
+                        className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 mt-1"
+                      />
+                    )}
                   </div>
-                  <ExternalLink
-                    size={14}
-                    className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 mt-1"
-                  />
-                </div>
-              </a>
-            ))}
+                </Wrapper>
+              );
+            })}
           </div>
         </div>
       ))}

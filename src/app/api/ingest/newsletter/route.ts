@@ -23,6 +23,19 @@ export async function POST(req: NextRequest) {
     if (!a.title) {
       return NextResponse.json({ error: "Each article requires a title" }, { status: 400 });
     }
+    if (a.link) {
+      try {
+        const url = new URL(a.link);
+        if (url.pathname === "/" || url.pathname === "") {
+          return NextResponse.json(
+            { error: `link must be a full article URL, not a root domain: ${a.link}` },
+            { status: 400 }
+          );
+        }
+      } catch {
+        return NextResponse.json({ error: `Invalid URL in link: ${a.link}` }, { status: 400 });
+      }
+    }
   }
 
   const ids = await insertNewsletterArticles(digest_date, articles);
