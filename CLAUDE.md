@@ -43,6 +43,15 @@ npm run build     # Production build (use to verify before commit)
 npm run lint      # ESLint
 ```
 
+## Agent Dependency — openclaw-home
+
+Moltzart and Pica (content agent) POST data to this site's `/api/ingest/*` endpoints. Their instructions live in the `openclaw-home` repo:
+- `AGENTS.md` — Data Layer section lists all endpoints + request formats
+- `workspace-content/AGENTS.md` — Pica's scanning procedures reference specific endpoints and formats
+- `STANDING-ORDERS.md` — Pica delegation section lists which endpoints each scan uses
+
+**When changing ingest API routes:** update the corresponding openclaw-home files and push. Moltzart won't see changes until he pulls.
+
 ## Key Conventions
 
 - **Dark theme only** — zinc-based palette, OKLCH color tokens in CSS variables
