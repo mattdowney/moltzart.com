@@ -1,5 +1,11 @@
 # Project Log
 
+## 2026-02-17 (session 8)
+- **Pica engage routing fix:** Pica (Haiku) was sending X engagement briefings to Telegram instead of POSTing to `/api/ingest/engage`. The moltzart endpoint and `/admin/engage` page were already working — problem was entirely in Pica's instructions in openclaw-home.
+- **Root cause:** Morning X Scan procedure was structured as "curate a briefing" with the API call as step 5 of 8 — Haiku defaulted to the Telegram output pattern. A competing remote commit had also reverted X scan routing to `/api/ingest/radar` and re-added dead endpoints (`/angles`, `/feedback`, `/research-request`).
+- **Fix (workspace-content/AGENTS.md):** Added Output Routing table (non-negotiable) with explicit scan→endpoint mapping. Rewrote Morning X Scan as API-first procedure with curl template, priority assignment, and response verification. Removed stale endpoints. Restored engage quality rules. Fixed newsletter cross-posting to radar.
+- **Decision:** Structural instructions beat prohibitions for smaller models — "build JSON and POST" works better than "don't send to Telegram" when the procedure already reads like a briefing task.
+
 ## 2026-02-16 (session 7)
 - **Newsletter link fix:** Pica was sending root domain URLs (e.g. `https://theverge.com`) as article links instead of full article URLs. Added validation to `/api/ingest/newsletter` that rejects bare domain links. Updated openclaw-home AGENTS.md with explicit instruction. Nulled 11 bad links in DB.
 - **Newsletter upsert:** Added `UNIQUE (digest_date, title)` constraint and `ON CONFLICT DO UPDATE` so Pica can re-process newsletter emails without creating duplicates. Existing fields preserved via COALESCE.
