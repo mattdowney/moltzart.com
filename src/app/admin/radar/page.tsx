@@ -1,12 +1,6 @@
-import { fetchRadarDates, fetchRadarDay } from "@/lib/db";
-import { RadarView } from "@/components/radar-view";
+import { redirect } from "next/navigation";
+import { getCurrentWeekMonday } from "@/lib/newsletter-weeks";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminRadar() {
-  const dates = await fetchRadarDates();
-  const today = dates[0] || new Date().toISOString().split("T")[0];
-  const initialData = dates.length > 0 ? await fetchRadarDay(today) : null;
-
-  return <RadarView dates={dates} initialData={initialData} initialDate={today} />;
+export default function AdminRadar() {
+  redirect(`/admin/radar/${getCurrentWeekMonday()}`);
 }
