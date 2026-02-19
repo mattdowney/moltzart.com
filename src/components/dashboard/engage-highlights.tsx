@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink, MessageCircle } from "lucide-react";
+import { ArrowUpRight, MessageCircle } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Panel } from "@/components/admin/panel";
+import { getWeekMonday } from "@/lib/newsletter-weeks";
 import type { DbEngageItem } from "@/lib/db";
 
 interface EngageHighlightsProps {
@@ -32,29 +33,21 @@ export function EngageHighlights({ items, date }: EngageHighlightsProps) {
           <EmptyState icon={MessageCircle} message="No targets from Pica yet." />
         </div>
       ) : (
-        <div className="divide-y divide-zinc-800/20">
+        <div className="divide-y divide-zinc-800/40">
           {items.map((item) => (
-            <div key={item.id} className="px-4 py-2.5 flex items-start gap-3 hover:bg-zinc-800/40 transition-colors">
-              <div className="flex-1 min-w-0">
-                {item.author && (
-                  <span className="text-xs text-teal-400 font-medium">{item.author}</span>
-                )}
-                <p className="text-sm text-zinc-200 truncate">{item.title}</p>
-                {item.context && (
-                  <p className="text-xs text-zinc-500 truncate">{item.context}</p>
-                )}
-              </div>
-              {item.tweet_url && (
-                <a
-                  href={item.tweet_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-600 hover:text-zinc-400 transition-colors shrink-0 mt-0.5"
-                >
-                  <ExternalLink size={10} />
-                </a>
+            <Link
+              key={item.id}
+              href={`/admin/engage/${getWeekMonday(item.date)}`}
+              className="block px-4 py-4 hover:bg-zinc-800/40 transition-colors"
+            >
+              {item.author && (
+                <span className="text-xs text-teal-400 font-medium">{item.author}</span>
               )}
-            </div>
+              <p className="text-sm text-zinc-200 truncate">{item.title}</p>
+              {item.context && (
+                <p className="text-xs text-zinc-500 truncate">{item.context}</p>
+              )}
+            </Link>
           ))}
         </div>
       )}

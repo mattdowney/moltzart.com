@@ -3,6 +3,7 @@ import { ArrowUpRight, Newspaper } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Panel } from "@/components/admin/panel";
 import { SourceTag } from "@/components/admin/tag-badge";
+import { getWeekMonday } from "@/lib/newsletter-weeks";
 import type { NewsletterArticle } from "@/lib/db";
 
 interface NewsletterHighlightsProps {
@@ -11,6 +12,7 @@ interface NewsletterHighlightsProps {
 }
 
 export function NewsletterHighlights({ articles, date }: NewsletterHighlightsProps) {
+  const weekHref = date ? `/admin/newsletter/${getWeekMonday(date)}` : "/admin/newsletter";
   return (
     <Panel className="flex flex-col h-full">
       {/* Header */}
@@ -33,24 +35,20 @@ export function NewsletterHighlights({ articles, date }: NewsletterHighlightsPro
           <EmptyState icon={Newspaper} message="No picks yet." />
         </div>
       ) : (
-        <div className="divide-y divide-zinc-800/20">
-          {articles.map((article) => {
-            const Wrapper = article.link ? "a" : "div";
-            const linkProps = article.link
-              ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
-              : {};
-            return (
-              <div key={article.id} className="px-4 py-2.5 hover:bg-zinc-800/40 transition-colors">
-                <Wrapper {...linkProps} className="block">
-                  {article.source && <SourceTag source={article.source} />}
-                  <p className="text-sm text-zinc-200 truncate mt-1">{article.title}</p>
-                  {article.description && (
-                    <p className="text-xs text-zinc-500 truncate">{article.description}</p>
-                  )}
-                </Wrapper>
-              </div>
-            );
-          })}
+        <div className="divide-y divide-zinc-800/40">
+          {articles.map((article) => (
+            <Link
+              key={article.id}
+              href={weekHref}
+              className="block px-4 py-4 hover:bg-zinc-800/40 transition-colors"
+            >
+              {article.source && <SourceTag source={article.source} />}
+              <p className="text-sm text-zinc-200 truncate mt-1">{article.title}</p>
+              {article.description && (
+                <p className="text-xs text-zinc-500 truncate">{article.description}</p>
+              )}
+            </Link>
+          ))}
         </div>
       )}
     </Panel>

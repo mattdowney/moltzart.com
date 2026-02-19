@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Radar } from "lucide-react";
 import type { DbRadarItem } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { LaneTag } from "@/components/admin/tag-badge";
+import { getWeekMonday } from "@/lib/newsletter-weeks";
 
 interface RadarHighlightsProps {
   date: string;
@@ -38,32 +39,20 @@ export function RadarHighlights({ date, items, today }: RadarHighlightsProps) {
           <EmptyState icon={Radar} message="No radar scan today" />
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto">
-          <div className="divide-y divide-zinc-800/20">
-            {items.slice(0, 5).map((item) => (
-              <div key={item.id} className="px-4 py-2.5">
-                <LaneTag lane={item.lane} />
-                <div className="mt-1">
-                  {item.source_url ? (
-                    <a
-                      href={item.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-zinc-200 hover:text-zinc-100 transition-colors truncate flex items-center gap-1.5"
-                    >
-                      {item.title}
-                      <ExternalLink size={10} className="text-zinc-600 shrink-0" />
-                    </a>
-                  ) : (
-                    <span className="text-sm text-zinc-200 truncate">{item.title}</span>
-                  )}
-                </div>
-                {item.why_bullets?.[0] && (
-                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{item.why_bullets[0]}</p>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/40">
+          {items.slice(0, 5).map((item) => (
+            <Link
+              key={item.id}
+              href={`/admin/radar/${getWeekMonday(item.date)}`}
+              className="block px-4 py-4 hover:bg-zinc-800/40 transition-colors"
+            >
+              <LaneTag lane={item.lane} />
+              <p className="text-sm text-zinc-200 mt-1">{item.title}</p>
+              {item.why_bullets?.[0] && (
+                <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{item.why_bullets[0]}</p>
+              )}
+            </Link>
+          ))}
         </div>
       )}
     </Panel>
