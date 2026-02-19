@@ -1,4 +1,5 @@
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+import { getWeekMonday } from "@/lib/newsletter-weeks";
 
 let _sql: NeonQueryFunction<false, false> | null = null;
 function sql() {
@@ -263,6 +264,44 @@ export async function fetchNewsletterDigests(): Promise<NewsletterDigest[]> {
   }
 
   return digests;
+}
+
+export async function fetchNewsletterWeek(start: string, end: string): Promise<NewsletterDigest[]> {
+  const rows = await sql()`
+    SELECT * FROM newsletter_articles
+    WHERE digest_date BETWEEN ${start} AND ${end}
+    ORDER BY digest_date ASC, created_at ASC
+  `;
+  if (rows.length === 0) return [];
+
+  const byDate = new Map<string, NewsletterArticle[]>();
+  for (const r of rows) {
+    const date = toDateStr(r.digest_date);
+    if (!byDate.has(date)) byDate.set(date, []);
+    byDate.get(date)!.push({
+      title: r.title,
+      description: r.description || "",
+      source: r.source || "",
+      link: r.link || "",
+      category: r.category || undefined,
+    });
+  }
+
+  const digests: NewsletterDigest[] = [];
+  for (const [date, articles] of byDate) {
+    digests.push({ date, label: formatDayLabel(date), articles, articleCount: articles.length });
+  }
+  return digests;
+}
+
+/** Returns all distinct week-start Mondays that have newsletter articles, sorted newest first. */
+export async function fetchNewsletterWeekStarts(): Promise<string[]> {
+  const rows = await sql()`SELECT DISTINCT digest_date FROM newsletter_articles ORDER BY digest_date DESC`;
+  const seen = new Set<string>();
+  for (const r of rows) {
+    seen.add(getWeekMonday(toDateStr(r.digest_date)));
+  }
+  return [...seen].sort().reverse();
 }
 
 // --- Radar (grouped view) ---
