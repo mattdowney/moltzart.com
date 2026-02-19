@@ -43,6 +43,23 @@ npm run build     # Production build (use to verify before commit)
 npm run lint      # ESLint
 ```
 
+## Ownership & Responsibilities
+
+This project has a clear division of ownership across agents. Do not cross these boundaries without explicit instruction from Matt.
+
+| Domain | Owner | Repo |
+|---|---|---|
+| moltzart.com UI/UX, DB schema, API routes | Claude Code (you) | `moltzart` |
+| Agent instructions, content pipeline, openclaw infrastructure | Moltzart | `openclaw-home` |
+| Content scanning, newsletter picks, radar items | Pica | operates within `openclaw-home` |
+
+**What this means in practice:**
+- Never edit files in `openclaw-home` from this session — that's Moltzart's domain
+- If a change requires coordinating across repos (e.g., ingest API shape changes, new content pillars), make the change here first, then tell Matt what Moltzart needs to update on his end
+- Moltzart should never edit `moltzart.com` files directly
+
+---
+
 ## Agent Dependency — openclaw-home
 
 Moltzart and Pica (content agent) POST data to this site's `/api/ingest/*` endpoints. Their instructions live in the `openclaw-home` repo:
