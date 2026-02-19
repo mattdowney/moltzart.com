@@ -227,6 +227,7 @@ export async function insertEngageItems(
 // --- Newsletter Digests (grouped view) ---
 
 export interface NewsletterArticle {
+  id: string;
   title: string;
   description: string;
   source: string;
@@ -250,6 +251,7 @@ export async function fetchNewsletterDigests(): Promise<NewsletterDigest[]> {
     const date = r.digest_date.slice(0, 10);
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date)!.push({
+      id: r.id,
       title: r.title,
       description: r.description || "",
       source: r.source || "",
@@ -270,7 +272,7 @@ export async function fetchNewsletterWeek(start: string, end: string): Promise<N
   const rows = await sql()`
     SELECT * FROM newsletter_articles
     WHERE digest_date BETWEEN ${start} AND ${end}
-    ORDER BY digest_date ASC, created_at ASC
+    ORDER BY digest_date DESC, created_at ASC
   `;
   if (rows.length === 0) return [];
 
@@ -279,6 +281,7 @@ export async function fetchNewsletterWeek(start: string, end: string): Promise<N
     const date = toDateStr(r.digest_date);
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date)!.push({
+      id: r.id,
       title: r.title,
       description: r.description || "",
       source: r.source || "",
@@ -302,6 +305,10 @@ export async function fetchNewsletterWeekStarts(): Promise<string[]> {
     seen.add(getWeekMonday(toDateStr(r.digest_date)));
   }
   return [...seen].sort().reverse();
+}
+
+export async function deleteNewsletterArticle(id: string): Promise<void> {
+  await sql()`DELETE FROM newsletter_articles WHERE id = ${id}`;
 }
 
 // --- Radar (grouped view) ---

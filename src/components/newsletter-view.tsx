@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { NewsletterDigest } from "@/lib/db";
-import { ExternalLink, Newspaper } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Newspaper, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/admin/empty-state";
 
 const sourceColors: Record<string, string> = {
@@ -27,78 +28,99 @@ function SourceBadge({ source }: { source: string }) {
   );
 }
 
-export function NewsletterView({ digests }: { digests: NewsletterDigest[] }) {
-  // Sort all digests chronologically (newest first) — already sorted from fetch
-  const totalArticles = digests.reduce((sum, d) => sum + d.articles.length, 0);
+export function NewsletterView({ digests: initialDigests }: { digests: NewsletterDigest[] }) {
+  const [digests, setDigests] = useState(initialDigests);
+  const [openDates, setOpenDates] = useState<Set<string>>(
+    () => new Set(initialDigests.length > 0 ? [initialDigests[0].date] : [])
+  );
 
   if (digests.length === 0) {
-    return (
-      <div>
-        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
-          <div className="flex items-center px-4 py-3 border-b border-zinc-800/30">
-            <div className="flex items-center gap-2">
-              <Newspaper size={14} className="text-teal-500" />
-              <span className="text-sm font-medium text-zinc-200">Newsletter</span>
-            </div>
-          </div>
-          <div className="flex-1 flex items-center justify-center py-8">
-            <EmptyState icon={Newspaper} message="No picks yet." />
-          </div>
-        </div>
-      </div>
+    return <EmptyState icon={Newspaper} message="No picks yet." />;
+  }
+
+  function toggleDay(date: string) {
+    setOpenDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
+    });
+  }
+
+  async function deleteArticle(digestDate: string, articleId: string) {
+    setDigests((prev) =>
+      prev
+        .map((d) =>
+          d.date === digestDate
+            ? { ...d, articles: d.articles.filter((a) => a.id !== articleId), articleCount: d.articles.length - 1 }
+            : d
+        )
+        .filter((d) => d.articles.length > 0)
     );
+    await fetch(`/api/admin/newsletter/${articleId}`, { method: "DELETE" });
   }
 
   return (
-    <div className="space-y-4">
-      {digests.map((digest) => (
-        <div key={digest.date} className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
-            <div className="flex items-center gap-2">
-              <Newspaper size={14} className="text-teal-500" />
-              <span className="text-sm font-medium text-zinc-200">{digest.label}</span>
-              <span className="text-xs text-zinc-600 font-mono">{digest.articles.length} articles</span>
-            </div>
-          </div>
+    <div className="space-y-2">
+      {digests.map((digest) => {
+        const isOpen = openDates.has(digest.date);
+        return (
+          <div key={digest.date} className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 flex flex-col">
+            <button
+              onClick={() => toggleDay(digest.date)}
+              className="flex items-center justify-between px-4 py-3 w-full text-left hover:bg-zinc-800/20 transition-colors rounded-lg"
+            >
+              <div className="flex items-center gap-2">
+                <Newspaper size={14} className="text-teal-500" />
+                <span className="text-sm font-medium text-zinc-200">{digest.label}</span>
+                <span className="text-xs text-zinc-600 font-mono">{digest.articles.length} articles</span>
+              </div>
+              {isOpen
+                ? <ChevronDown size={14} className="text-zinc-600" />
+                : <ChevronRight size={14} className="text-zinc-600" />
+              }
+            </button>
 
-          <div className="divide-y divide-zinc-800/20">
-            {digest.articles.map((article, idx) => {
-              const Wrapper = article.link ? "a" : "div";
-              const linkProps = article.link
-                ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
-                : {};
-              return (
-                <Wrapper
-                  key={idx}
-                  {...linkProps}
-                  className="block px-4 py-3 hover:bg-zinc-800/40 transition-colors group"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <SourceBadge source={article.source} />
-                        <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
-                          {article.title}
+            {isOpen && (
+              <div className="divide-y divide-zinc-800/20 border-t border-zinc-800/30">
+                {digest.articles.map((article) => {
+                  const Wrapper = article.link ? "a" : "div";
+                  const linkProps = article.link
+                    ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
+                    : {};
+                  return (
+                    <div key={article.id} className="flex items-start gap-2 px-4 py-3 hover:bg-zinc-800/40 transition-colors group">
+                      <Wrapper {...linkProps} className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <SourceBadge source={article.source} />
+                          <p className="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">
+                            {article.title}
+                          </p>
+                        </div>
+                        <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
+                          {article.description}
                         </p>
+                      </Wrapper>
+                      <div className="flex items-center gap-1 shrink-0 mt-1">
+                        {article.link && (
+                          <ExternalLink size={14} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
+                        )}
+                        <button
+                          onClick={(e) => { e.preventDefault(); deleteArticle(digest.date, article.id); }}
+                          className="text-zinc-700 hover:text-red-400 transition-colors p-0.5 opacity-0 group-hover:opacity-100"
+                          title="Delete article"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                      <p className="text-sm text-zinc-500 leading-relaxed line-clamp-2">
-                        {article.description}
-                      </p>
                     </div>
-                    {article.link && (
-                      <ExternalLink
-                        size={14}
-                        className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 mt-1"
-                      />
-                    )}
-                  </div>
-                </Wrapper>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
