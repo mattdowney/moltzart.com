@@ -16,6 +16,8 @@ import { StatusDot } from "@/components/admin/status-dot";
 import { Panel } from "@/components/admin/panel";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { RadarHighlights } from "@/components/dashboard/radar-highlights";
+import { EngageHighlights } from "@/components/dashboard/engage-highlights";
+import { NewsletterHighlights } from "@/components/dashboard/newsletter-highlights";
 
 export const dynamic = "force-dynamic";
 
@@ -42,11 +44,11 @@ export default async function AdminDashboard() {
     ? { items: await fetchRadarItemsByDate(latestRadarDate) }
     : null;
 
-  // Engage: count today's reply targets
+  // Engage: fetch from most recent date (not just today)
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
   const latestEngageDate = engageDates[0] || null;
-  const engageItems = latestEngageDate === today
-    ? await fetchEngageItemsByDate(today)
+  const engageItems = latestEngageDate
+    ? await fetchEngageItemsByDate(latestEngageDate)
     : [];
 
   // Newsletter: count latest digest articles
@@ -54,6 +56,12 @@ export default async function AdminDashboard() {
   const latestDigestCount = latestDigestDate
     ? newsletterArticles.filter((a) => a.digest_date.slice(0, 10) === latestDigestDate).length
     : 0;
+  const latestDigestArticles = latestDigestDate
+    ? newsletterArticles
+        .filter((a) => a.digest_date.slice(0, 10) === latestDigestDate)
+        .slice(0, 4)
+        .map((a) => ({ id: a.id, title: a.title, description: a.description || "", source: a.source || "", link: a.link || "", category: a.category || undefined }))
+    : [];
 
   // Task stats
   const taskStats = { urgent: 0, active: 0, blocked: 0, completed: 0, total: tasks.length };
@@ -114,7 +122,9 @@ export default async function AdminDashboard() {
         <StatCard
           title="Engage"
           value={engageItems.length}
-          subtitle={engageItems.length > 0 ? `${engageItems.length} reply targets today` : "No targets today"}
+          subtitle={engageItems.length > 0
+            ? `${engageItems.length} targets · ${latestEngageDate}`
+            : "No targets yet"}
           href="/admin/engage"
         />
 
@@ -167,11 +177,12 @@ export default async function AdminDashboard() {
         </div>
       </Panel>}
 
-      {/* Row 3: Radar highlights */}
-      <RadarHighlights
-        date={latestRadarDate || "—"}
-        items={latestRadar?.items || []}
-      />
+      {/* Row 3: Intelligence Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <RadarHighlights date={latestRadarDate || "—"} items={latestRadar?.items || []} today={today} />
+        <EngageHighlights items={engageItems.slice(0, 4)} date={latestEngageDate} />
+        <NewsletterHighlights articles={latestDigestArticles} date={latestDigestDate} />
+      </div>
     </div>
   );
 }

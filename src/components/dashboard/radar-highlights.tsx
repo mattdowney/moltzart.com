@@ -9,17 +9,21 @@ import { Panel } from "@/components/admin/panel";
 interface RadarHighlightsProps {
   date: string;
   items: DbRadarItem[];
+  today: string;
 }
 
-export function RadarHighlights({ date, items }: RadarHighlightsProps) {
+export function RadarHighlights({ date, items, today }: RadarHighlightsProps) {
+  const isToday = date === today;
   return (
     <Panel className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
         <div className="flex items-center gap-2">
           <Radar size={14} className="text-teal-500" />
-          <span className="text-sm font-medium text-zinc-200">Today&apos;s Radar</span>
-          {date !== "—" && <span className="text-xs text-zinc-600 font-mono">{date}</span>}
+          <span className="text-sm font-medium text-zinc-200">
+            {isToday ? "Today's Radar" : "Latest Scan"}
+          </span>
+          {date !== "—" && !isToday && <span className="text-xs text-zinc-600 font-mono">{date}</span>}
         </div>
         <Link
           href="/admin/radar"
