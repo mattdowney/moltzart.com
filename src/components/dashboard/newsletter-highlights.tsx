@@ -42,10 +42,8 @@ export function NewsletterHighlights({ articles, date }: NewsletterHighlightsPro
             return (
               <div key={article.id} className="px-4 py-2.5 hover:bg-zinc-800/40 transition-colors">
                 <Wrapper {...linkProps} className="block">
-                  <div className="flex items-start gap-3">
-                    <p className="flex-1 min-w-0 text-sm text-zinc-200 truncate">{article.title}</p>
-                    {article.source && <SourceTag source={article.source} />}
-                  </div>
+                  {article.source && <SourceTag source={article.source} />}
+                  <p className="text-sm text-zinc-200 truncate mt-1">{article.title}</p>
                   {article.description && (
                     <p className="text-xs text-zinc-500 truncate">{article.description}</p>
                   )}

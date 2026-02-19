@@ -46,28 +46,26 @@ export function RadarHighlights({ date, items, today }: RadarHighlightsProps) {
           </div>
           <div className="divide-y divide-zinc-800/20">
             {items.slice(0, 5).map((item) => (
-              <div key={item.id} className="px-4 py-2.5 flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {item.source_url ? (
-                      <a
-                        href={item.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-zinc-200 hover:text-zinc-100 transition-colors truncate flex items-center gap-1.5"
-                      >
-                        {item.title}
-                        <ExternalLink size={10} className="text-zinc-600 shrink-0" />
-                      </a>
-                    ) : (
-                      <span className="text-sm text-zinc-200 truncate">{item.title}</span>
-                    )}
-                  </div>
-                  {item.why_bullets?.[0] && (
-                    <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{item.why_bullets[0]}</p>
+              <div key={item.id} className="px-4 py-2.5">
+                <LaneTag lane={item.lane} />
+                <div className="mt-1">
+                  {item.source_url ? (
+                    <a
+                      href={item.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-zinc-200 hover:text-zinc-100 transition-colors truncate flex items-center gap-1.5"
+                    >
+                      {item.title}
+                      <ExternalLink size={10} className="text-zinc-600 shrink-0" />
+                    </a>
+                  ) : (
+                    <span className="text-sm text-zinc-200 truncate">{item.title}</span>
                   )}
                 </div>
-                <LaneTag lane={item.lane} />
+                {item.why_bullets?.[0] && (
+                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{item.why_bullets[0]}</p>
+                )}
               </div>
             ))}
           </div>

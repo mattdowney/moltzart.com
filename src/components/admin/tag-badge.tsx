@@ -38,7 +38,7 @@ export function LaneTag({ lane }: { lane: string }) {
 export function SourceTag({ source }: { source: string }) {
   const colors = sourceColors[source] || "bg-zinc-700/40 text-zinc-400";
   return (
-    <span className={`${tagBase} ${colors}`}>
+    <span className={`${tagBase} uppercase tracking-wider ${colors}`}>
       {source}
     </span>
   );
