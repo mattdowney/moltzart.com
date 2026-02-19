@@ -517,6 +517,43 @@ export async function deleteXDraft(id: string): Promise<void> {
   await sql()`DELETE FROM x_drafts WHERE id = ${id}`;
 }
 
+export interface DraftDay {
+  date: string;
+  label: string;
+  drafts: DbXDraft[];
+}
+
+export async function fetchXDraftsWeek(start: string, end: string): Promise<DraftDay[]> {
+  const rows = await sql()`
+    SELECT * FROM x_drafts
+    WHERE created_at::date BETWEEN ${start}::date AND ${end}::date
+    ORDER BY created_at DESC
+  `;
+  if (rows.length === 0) return [];
+
+  const byDate = new Map<string, DbXDraft[]>();
+  for (const r of rows) {
+    const date = toDateStr(r.created_at);
+    if (!byDate.has(date)) byDate.set(date, []);
+    byDate.get(date)!.push(r as unknown as DbXDraft);
+  }
+
+  const days: DraftDay[] = [];
+  for (const [date, items] of byDate) {
+    days.push({ date, label: formatDayLabel(date), drafts: items });
+  }
+  return days;
+}
+
+export async function fetchXDraftWeekStarts(): Promise<string[]> {
+  const rows = await sql()`SELECT DISTINCT created_at::date AS date FROM x_drafts ORDER BY date DESC`;
+  const seen = new Set<string>();
+  for (const r of rows) {
+    seen.add(getWeekMonday(toDateStr(r.date)));
+  }
+  return [...seen].sort().reverse();
+}
+
 // --- Shared helpers ---
 
 function formatDayLabel(dateStr: string): string {
