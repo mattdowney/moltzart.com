@@ -357,6 +357,7 @@ export async function deleteEngageItem(id: string): Promise<void> {
 // --- Radar (grouped view) ---
 
 export interface RadarItem {
+  id: string;
   title: string;
   source: string;
   link: string;
@@ -387,6 +388,7 @@ export async function fetchRadarDay(date: string): Promise<RadarDay | null> {
   for (const item of items) {
     if (!sectionMap.has(item.section)) sectionMap.set(item.section, []);
     sectionMap.get(item.section)!.push({
+      id: item.id,
       title: item.title,
       source: item.source_name || item.section,
       link: item.source_url || "",
@@ -409,6 +411,57 @@ export async function fetchRadarDay(date: string): Promise<RadarDay | null> {
     scanSources: scanSources.size > 0 ? Array.from(scanSources) : undefined,
     itemCount: items.length,
   };
+}
+
+export interface RadarWeekDay {
+  date: string;
+  label: string;
+  sections: { heading: string; items: RadarItem[] }[];
+}
+
+export async function fetchRadarWeek(start: string, end: string): Promise<RadarWeekDay[]> {
+  const rows = await sql()`
+    SELECT * FROM radar_items
+    WHERE date BETWEEN ${start} AND ${end}
+    ORDER BY date DESC, section, created_at
+  `;
+  if (rows.length === 0) return [];
+
+  const byDate = new Map<string, Map<string, RadarItem[]>>();
+  for (const r of rows) {
+    const date = toDateStr(r.date);
+    if (!byDate.has(date)) byDate.set(date, new Map());
+    const sectionMap = byDate.get(date)!;
+    if (!sectionMap.has(r.section)) sectionMap.set(r.section, []);
+    sectionMap.get(r.section)!.push({
+      id: r.id as string,
+      title: r.title as string,
+      source: (r.source_name as string) || (r.section as string),
+      link: (r.source_url as string) || "",
+      lane: r.lane as string,
+      note: ((r.why_bullets as string[]) || []).join("\n"),
+    });
+  }
+
+  const days: RadarWeekDay[] = [];
+  for (const [date, sectionMap] of byDate) {
+    const sections = Array.from(sectionMap.entries()).map(([heading, items]) => ({ heading, items }));
+    days.push({ date, label: formatDayLabel(date), sections });
+  }
+  return days;
+}
+
+export async function fetchRadarWeekStarts(): Promise<string[]> {
+  const rows = await sql()`SELECT DISTINCT date FROM radar_items ORDER BY date DESC`;
+  const seen = new Set<string>();
+  for (const r of rows) {
+    seen.add(getWeekMonday(toDateStr(r.date)));
+  }
+  return [...seen].sort().reverse();
+}
+
+export async function deleteRadarItem(id: string): Promise<void> {
+  await sql()`DELETE FROM radar_items WHERE id = ${id}`;
 }
 
 // --- Shared helpers ---
