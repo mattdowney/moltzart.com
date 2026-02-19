@@ -9,6 +9,14 @@
 - **Watch:** `WeekSelector` uncontrolled select edge case — if user navigates to a valid Monday with no articles while other weeks have data, the dropdown `value` won't match any option. Visually shows wrong week. Low-risk for solo use but worth cleaning up.
 - **Next:** Verify week view looks correct in browser. Check that Pica's newsletter ingests on Feb 16–19 appear under the Feb 16–20 week.
 
+## 2026-02-19 (session 10)
+- **Newsletter UX refinements:** Most recent day now sorts first and opens by default. Other days collapsible. Hover-reveal trash icon deletes articles optimistically. Added `DELETE /api/admin/newsletter/[id]` endpoint and `deleteNewsletterArticle()` in db.ts. Added `id` field to `NewsletterArticle` interface.
+- **Engage week view:** Applied identical structure to `/admin/engage` — week slug routing, collapsible days, delete button, priority tiers preserved within each day. `WeekSelector` now takes a `basePath` prop instead of hardcoding `/admin/newsletter`.
+- **Decision:** `WeekSelector` made generic via `basePath` prop so it can serve both newsletter and engage (and any future week-scoped pages) without duplication.
+- **Learned:** Ingest pipelines (`/api/ingest/*`) were completely untouched — only the admin display layer changed. Safe to refactor the view without touching Pica's endpoints.
+- **Watch:** Dev server must be restarted when new route directories are added (e.g. `[week]/`) — Next.js hot reload doesn't pick up new filesystem routes automatically.
+- **Next:** Verify engage week view in browser. Both newsletter and engage now share the same week-view pattern — if one needs a tweak, check if the other needs it too.
+
 ## 2026-02-17 (session 8)
 - **Pica engage routing fix:** Pica (Haiku) was sending X engagement briefings to Telegram instead of POSTing to `/api/ingest/engage`. The moltzart endpoint and `/admin/engage` page were already working — problem was entirely in Pica's instructions in openclaw-home.
 - **Root cause:** Morning X Scan procedure was structured as "curate a briefing" with the API call as step 5 of 8 — Haiku defaulted to the Telegram output pattern. A competing remote commit had also reverted X scan routing to `/api/ingest/radar` and re-added dead endpoints (`/angles`, `/feedback`, `/research-request`).
