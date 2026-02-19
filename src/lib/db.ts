@@ -116,6 +116,11 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
     SELECT * FROM tasks
     WHERE status != 'done' OR updated_at > now() - interval '7 days'
     ORDER BY
+      CASE status
+        WHEN 'in_progress' THEN 0
+        WHEN 'done' THEN 2
+        ELSE 1
+      END,
       CASE priority
         WHEN 'urgent' THEN 0
         WHEN 'high' THEN 1
