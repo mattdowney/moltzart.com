@@ -52,7 +52,7 @@ export function renderOgImageCard({
       >
         <div
           style={{
-            width: "100%",
+            width: "60%",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -86,7 +86,7 @@ export function renderOgImageCard({
           >
             <div
               style={{
-                fontSize: "64px",
+                fontSize: "58px",
                 fontWeight: 700,
                 lineHeight: 1.1,
                 letterSpacing: "-0.03em",
@@ -96,7 +96,7 @@ export function renderOgImageCard({
             </div>
             <div
               style={{
-                fontSize: "32px",
+                fontSize: "30px",
                 color: "#a1a1aa",
                 lineHeight: 1.25,
               }}
@@ -123,21 +123,22 @@ export function renderOgImageCard({
 
         <div
           style={{
-            minWidth: "280px",
-            padding: "48px 48px 48px 0",
+            width: "40%",
+            padding: "48px",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            borderLeft: "1px solid rgba(113, 113, 122, 0.35)",
           }}
         >
           <img
             src={avatarUrl}
             alt="Moltzart avatar"
-            width={190}
-            height={190}
+            width={260}
+            height={260}
             style={{
               borderRadius: "9999px",
-              border: "2px solid rgba(161, 161, 170, 0.35)",
+              border: "3px solid rgba(161, 161, 170, 0.5)",
             }}
           />
         </div>
