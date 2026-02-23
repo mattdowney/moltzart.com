@@ -8,18 +8,18 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { Panel } from "@/components/admin/panel";
 import { LaneTag, laneColors } from "@/components/admin/tag-badge";
 
-type SectionMeta = { icon: LucideIcon; iconClass: string; borderClass: string };
+type SectionMeta = { icon: LucideIcon; iconClass: string; accentBg: string };
 
 const SECTION_META: Record<string, SectionMeta> = {
-  "Hacker News":       { icon: Flame,         iconClass: "text-orange-400", borderClass: "border-orange-500/60" },
-  "Reddit":            { icon: MessageCircle,  iconClass: "text-rose-400",   borderClass: "border-rose-500/60"   },
-  "Blogs":             { icon: BookOpen,       iconClass: "text-cyan-400",   borderClass: "border-cyan-500/60"   },
-  "GitHub Trending":   { icon: Github,         iconClass: "text-purple-400", borderClass: "border-purple-500/60" },
-  "X Timeline":        { icon: Twitter,        iconClass: "text-sky-400",    borderClass: "border-sky-500/60"    },
-  "Changelog Nightly": { icon: Rss,            iconClass: "text-emerald-400",borderClass: "border-emerald-500/60"},
-  "Product Hunt Weekly":{ icon: TrendingUp,    iconClass: "text-amber-400",  borderClass: "border-amber-500/60"  },
+  "Hacker News":        { icon: Flame,        iconClass: "text-orange-400",  accentBg: "bg-orange-500"  },
+  "Reddit":             { icon: MessageCircle, iconClass: "text-rose-400",    accentBg: "bg-rose-500"    },
+  "Blogs":              { icon: BookOpen,      iconClass: "text-cyan-400",    accentBg: "bg-cyan-500"    },
+  "GitHub Trending":    { icon: Github,        iconClass: "text-purple-400",  accentBg: "bg-purple-500"  },
+  "X Timeline":         { icon: Twitter,       iconClass: "text-sky-400",     accentBg: "bg-sky-500"     },
+  "Changelog Nightly":  { icon: Rss,           iconClass: "text-emerald-400", accentBg: "bg-emerald-500" },
+  "Product Hunt Weekly":{ icon: TrendingUp,    iconClass: "text-amber-400",   accentBg: "bg-amber-500"   },
 };
-const DEFAULT_META: SectionMeta = { icon: Globe, iconClass: "text-zinc-400", borderClass: "border-zinc-600/60" };
+const DEFAULT_META: SectionMeta = { icon: Globe, iconClass: "text-zinc-400", accentBg: "bg-zinc-600" };
 
 export function RadarWeekView({ days: initialDays }: { days: RadarWeekDay[] }) {
   const [days, setDays] = useState(initialDays);
@@ -91,7 +91,8 @@ export function RadarWeekView({ days: initialDays }: { days: RadarWeekDay[] }) {
                     const SectionIcon = meta.icon;
                     return (
                     <div key={section.heading}>
-                      <div className={`px-4 py-3 bg-zinc-800/50 flex items-center justify-between border-l-4 ${meta.borderClass} ${sIdx > 0 ? "border-t border-zinc-800/50" : ""}`}>
+                      <div className={`relative pl-5 pr-4 py-3 bg-zinc-800/50 flex items-center justify-between ${sIdx > 0 ? "border-t border-zinc-800/50" : ""}`}>
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${meta.accentBg}`} />
                         <div className="flex items-center gap-2.5">
                           <SectionIcon size={16} className={meta.iconClass} />
                           <span className={`text-sm font-bold tracking-wide ${meta.iconClass}`}>
