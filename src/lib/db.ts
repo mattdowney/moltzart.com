@@ -96,6 +96,23 @@ export async function insertNewsletterArticles(
   return ids;
 }
 
+export async function updateNewsletterArticle(
+  id: string,
+  fields: { title?: string; source?: string; link?: string; category?: string; description?: string }
+): Promise<boolean> {
+  const rows = await sql()`
+    UPDATE newsletter_articles SET
+      title = COALESCE(${fields.title ?? null}::text, title),
+      source = COALESCE(${fields.source ?? null}::text, source),
+      link = COALESCE(${fields.link ?? null}::text, link),
+      category = COALESCE(${fields.category ?? null}::text, category),
+      description = COALESCE(${fields.description ?? null}::text, description)
+    WHERE id = ${id}
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
 // --- Tasks ---
 
 export interface DbTask {
