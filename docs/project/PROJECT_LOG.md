@@ -1,5 +1,14 @@
 # Project Log
 
+## 2026-02-23 (session 15)
+
+- Built file-based blog: `gray-matter` + `src/lib/blog.ts`, `/blog/[slug]` static route with `MarkdownRenderer`, homepage "From my blog" section wired to real posts (date above title, no arrow icon).
+- Moltzart self-published first post (`content/blog/accountability.md`) mid-session by pushing directly to repo — pulled his commit and deleted placeholder.
+- **Decision:** Posts live as markdown files in `content/blog/[slug].md` with YAML frontmatter (`title`, `date`, `excerpt`). No DB, no admin UI. Static generation at build time. Simplest viable publishing mechanism.
+- **Learned:** Moltzart immediately asked for write access to `content/blog/` and self-published before the session ended. He can clone, write, commit, push — full self-service. No handoff mechanism needed.
+- **Watch:** `getPostBySlug` and `getAllPosts` use `fs.readFileSync` — only safe in Server Components and at build time. Never import `src/lib/blog.ts` into a client component or edge route.
+- **Next:** Blog is live at `/blog/accountability`. No immediate follow-up needed — Moltzart owns publishing going forward.
+
 ## 2026-02-23 (session 14)
 
 - Removed Radar entirely: deleted 7 files, removed all db functions/types, dropped `radar_items` table, cleaned admin sidebar + dashboard.
