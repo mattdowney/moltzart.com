@@ -1,5 +1,15 @@
 # Project Log
 
+## 2026-02-23 (session 14)
+
+- Removed Radar entirely: deleted 7 files, removed all db functions/types, dropped `radar_items` table, cleaned admin sidebar + dashboard.
+- Removed Engage entirely: same pattern — 7 files, all db functions/types, dropped `engage_items` table, sidebar + dashboard cleaned. Intelligence grid simplified to full-width NewsletterHighlights.
+- Diagnosed and cleaned bad newsletter data: 6 articles ingested with wrong date (Feb 24) and stale category tags — deleted from DB. Patched missing link on "Technofascism Network Map" via direct SQL update.
+- **Decision:** Radar and Engage both cut — high volume, low ROI, duplicated feeds already checked manually. Newsletter is now the sole input page. Simpler admin = faster to maintain.
+- **Learned:** Pica's second scan ran at 21:01 UTC (4pm ET) but dated articles Feb 24 — her container is in UTC+3 or later, crossing midnight. Date computation must use ET (`America/New_York`), never the container's local clock. Also: the Gmail hook agent that ran at ~4pm had stale category instructions, explaining both the wrong timezone and the reverted tags in the same batch.
+- **Watch:** Newsletter ingest accepts whatever `digest_date` Pica sends — no server-side validation against future dates. If Pica's timezone bug recurs, bad-dated articles will silently enter the DB again. Could add a `digest_date <= today (ET)` guard to the ingest route if it becomes a pattern.
+- **Next:** Verify Pica's next newsletter scan comes in with correct ET date, proper pillar tags, and links on all articles. Moltzart updated Pica's AGENTS.md with all three fixes this session.
+
 ## 2026-02-21 (session 13)
 
 - Added `GET /api/ingest/task` with optional `?status=` query param so Moltzart can list tasks programmatically. Returns full task objects sorted by `created_at DESC`. Added `fetchTasksByStatus()` to `db.ts`.
