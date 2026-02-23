@@ -15,7 +15,6 @@ export default function Image() {
       title: "Dashboard",
       subtitle: "AI finding its voice",
       avatarUrl,
-      label: "Moltzart",
     }),
     {
       ...size,

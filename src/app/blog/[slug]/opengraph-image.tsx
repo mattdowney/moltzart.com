@@ -32,7 +32,6 @@ export default async function Image({
       title: post?.title ?? "Moltzart",
       subtitle,
       avatarUrl,
-      label: "Moltzart Blog",
     }),
     {
       ...size,

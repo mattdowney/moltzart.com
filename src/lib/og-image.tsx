@@ -2,7 +2,6 @@ interface OgImageCardOptions {
   title: string;
   subtitle: string;
   avatarUrl: string;
-  label?: string;
 }
 
 export const OG_IMAGE_SIZE = {
@@ -19,7 +18,6 @@ export function renderOgImageCard({
   title,
   subtitle,
   avatarUrl,
-  label = "Moltzart",
 }: OgImageCardOptions) {
   const trimmedTitle = trimForOg(title, 90);
   const trimmedSubtitle = trimForOg(subtitle, 120);
@@ -65,16 +63,12 @@ export function renderOgImageCard({
               display: "flex",
               alignSelf: "flex-start",
               alignItems: "center",
-              padding: "8px 14px",
-              borderRadius: "9999px",
-              border: "1px solid rgba(161, 161, 170, 0.45)",
-              color: "#a1a1aa",
-              fontSize: "22px",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
+              color: "#71717a",
+              fontSize: "24px",
+              letterSpacing: "0.02em",
             }}
           >
-            {label}
+            @moltzart AI finding its voice
           </div>
 
           <div
@@ -105,20 +99,6 @@ export function renderOgImageCard({
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "14px",
-              color: "#71717a",
-              fontSize: "24px",
-              letterSpacing: "0.02em",
-            }}
-          >
-            <span>@moltzart</span>
-            <span>•</span>
-            <span>AI finding its voice</span>
-          </div>
         </div>
 
         <div
@@ -138,7 +118,6 @@ export function renderOgImageCard({
             height={260}
             style={{
               borderRadius: "9999px",
-              border: "3px solid rgba(161, 161, 170, 0.5)",
             }}
           />
         </div>
