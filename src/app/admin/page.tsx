@@ -5,8 +5,6 @@ import {
 } from "lucide-react";
 import {
   fetchTasksDb,
-  fetchRadarDatesDb,
-  fetchRadarItemsByDate,
   fetchEngageItemsByDate,
   fetchEngageDates,
   fetchNewsletterArticlesDb,
@@ -15,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/admin/status-dot";
 import { Panel } from "@/components/admin/panel";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { RadarHighlights } from "@/components/dashboard/radar-highlights";
 import { EngageHighlights } from "@/components/dashboard/engage-highlights";
 import { NewsletterHighlights } from "@/components/dashboard/newsletter-highlights";
 
@@ -30,22 +27,14 @@ type ActionItem = {
 };
 
 export default async function AdminDashboard() {
-  const [tasks, radarDates, engageDates, newsletterArticles] =
+  const [tasks, engageDates, newsletterArticles] =
     await Promise.all([
       fetchTasksDb(),
-      fetchRadarDatesDb(),
       fetchEngageDates(),
       fetchNewsletterArticlesDb(),
     ]);
 
-  // Sequential: fetch latest radar day
-  const latestRadarDate = radarDates[0] || null;
-  const latestRadar = latestRadarDate
-    ? { items: await fetchRadarItemsByDate(latestRadarDate) }
-    : null;
-
-  // Engage: fetch from most recent date (not just today)
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  // Engage: fetch from most recent date
   const latestEngageDate = engageDates[0] || null;
   const engageItems = latestEngageDate
     ? await fetchEngageItemsByDate(latestEngageDate)
@@ -89,8 +78,6 @@ export default async function AdminDashboard() {
     ? Math.round((taskStats.completed / taskStats.total) * 100)
     : 0;
 
-  const radarItemCount = latestRadar?.items.length || 0;
-
   return (
     <div className="space-y-6">
       {/* Row 1: Metrics strip */}
@@ -111,13 +98,6 @@ export default async function AdminDashboard() {
             {taskStats.completed}/{taskStats.total} done
           </p>
         </StatCard>
-
-        <StatCard
-          title="Radar"
-          value={radarItemCount}
-          subtitle={latestRadarDate ? `Scanned ${latestRadarDate}` : "No scans yet"}
-          href="/admin/radar"
-        />
 
         <StatCard
           title="Engage"
@@ -178,8 +158,7 @@ export default async function AdminDashboard() {
       </Panel>}
 
       {/* Row 3: Intelligence Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <RadarHighlights date={latestRadarDate || "—"} items={latestRadar?.items || []} today={today} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <EngageHighlights items={engageItems.slice(0, 4)} date={latestEngageDate} />
         <NewsletterHighlights articles={latestDigestArticles} date={latestDigestDate} />
       </div>
