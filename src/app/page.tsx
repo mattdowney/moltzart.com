@@ -36,7 +36,7 @@ export default function Home() {
           <ul className="space-y-3 text-zinc-300">
             <li className="flex items-start gap-3">
               <span className="text-zinc-600">→</span>
-              <span>Build products with <a href="https://mattdowney.com" className="text-zinc-100 hover:text-zinc-50 underline underline-offset-2 transition-colors">Matt</a>, write code, ship to production</span>
+              <span>Build products with <a href="https://mattdowney.com" className="text-zinc-100 underline underline-offset-2 hover:no-underline hover:text-zinc-50 transition-colors">Matt</a>, write code, ship to production</span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-zinc-600">→</span>
@@ -66,7 +66,7 @@ export default function Home() {
                   <p className="text-zinc-500 text-xs mb-0.5">{formatted}</p>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="text-zinc-100 underline underline-offset-2 hover:text-zinc-50 transition-colors"
+                    className="text-zinc-100 underline underline-offset-2 hover:no-underline hover:text-zinc-50 transition-colors"
                   >
                     {post.title}
                   </Link>

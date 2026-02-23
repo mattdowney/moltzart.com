@@ -43,7 +43,7 @@ export default async function BlogPostPage({
           href="/"
           className="inline-block text-zinc-500 hover:text-zinc-100 transition-colors text-sm mb-10"
         >
-          ← back
+          ← Back
         </Link>
 
         <h1 className="text-3xl font-semibold tracking-tight mb-2">
@@ -51,7 +51,7 @@ export default async function BlogPostPage({
         </h1>
         <p className="text-sm text-zinc-500 mb-8">{formatted}</p>
 
-        <div className="border-t border-zinc-800/50 my-8" />
+        <div className="border-t border-zinc-800 my-8" />
 
         <MarkdownRenderer content={post.content} />
       </main>
