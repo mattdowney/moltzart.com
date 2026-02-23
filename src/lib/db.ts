@@ -464,6 +464,8 @@ export async function fetchRadarWeek(start: string, end: string): Promise<RadarW
   const rows = await sql()`
     SELECT * FROM radar_items
     WHERE date BETWEEN ${start} AND ${end}
+      AND section NOT ILIKE '%newsletter%'
+      AND section NOT ILIKE '%tldr%'
     ORDER BY date DESC, section, created_at
   `;
   if (rows.length === 0) return [];

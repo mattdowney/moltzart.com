@@ -74,10 +74,11 @@ export function RadarWeekView({ days: initialDays }: { days: RadarWeekDay[] }) {
                 <div className="border-t border-zinc-800/30">
                   {day.sections.map((section, sIdx) => (
                     <div key={section.heading}>
-                      <div className={`px-4 py-2 ${sIdx > 0 ? "border-t border-zinc-800/30" : ""}`}>
-                        <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-medium">
-                          {section.heading} · {section.items.length}
+                      <div className={`px-4 py-2.5 bg-zinc-800/30 flex items-center justify-between ${sIdx > 0 ? "border-t border-zinc-800/50" : ""}`}>
+                        <span className="text-xs text-zinc-300 uppercase tracking-widest font-semibold">
+                          {section.heading}
                         </span>
+                        <span className="text-xs text-zinc-600 font-mono">{section.items.length}</span>
                       </div>
                       <div className="divide-y divide-zinc-800/20">
                         {section.items.map((item: RadarItem) => {

@@ -19,6 +19,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields: date, section, items (non-empty array)" }, { status: 400 });
   }
 
+  const sectionLower = section.toLowerCase();
+  if (sectionLower.includes("newsletter") || sectionLower.includes("tldr")) {
+    return NextResponse.json({ error: "Newsletter content belongs in /api/ingest/newsletter, not /api/ingest/radar" }, { status: 422 });
+  }
+
   for (const item of items) {
     if (!item.title || !item.lane) {
       return NextResponse.json({ error: "Each item requires title and lane" }, { status: 400 });
