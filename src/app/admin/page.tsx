@@ -5,15 +5,12 @@ import {
 } from "lucide-react";
 import {
   fetchTasksDb,
-  fetchEngageItemsByDate,
-  fetchEngageDates,
   fetchNewsletterArticlesDb,
 } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/admin/status-dot";
 import { Panel } from "@/components/admin/panel";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { EngageHighlights } from "@/components/dashboard/engage-highlights";
 import { NewsletterHighlights } from "@/components/dashboard/newsletter-highlights";
 
 export const dynamic = "force-dynamic";
@@ -27,18 +24,11 @@ type ActionItem = {
 };
 
 export default async function AdminDashboard() {
-  const [tasks, engageDates, newsletterArticles] =
+  const [tasks, newsletterArticles] =
     await Promise.all([
       fetchTasksDb(),
-      fetchEngageDates(),
       fetchNewsletterArticlesDb(),
     ]);
-
-  // Engage: fetch from most recent date
-  const latestEngageDate = engageDates[0] || null;
-  const engageItems = latestEngageDate
-    ? await fetchEngageItemsByDate(latestEngageDate)
-    : [];
 
   // Newsletter: count latest digest articles
   const latestDigestDate = newsletterArticles.length > 0 ? newsletterArticles[0].digest_date.slice(0, 10) : null;
@@ -100,15 +90,6 @@ export default async function AdminDashboard() {
         </StatCard>
 
         <StatCard
-          title="Engage"
-          value={engageItems.length}
-          subtitle={engageItems.length > 0
-            ? `${engageItems.length} targets · ${latestEngageDate}`
-            : "No targets yet"}
-          href="/admin/engage"
-        />
-
-        <StatCard
           title="Newsletter"
           value={latestDigestCount}
           subtitle={latestDigestDate ? `Latest: ${latestDigestDate}` : "No digests yet"}
@@ -158,8 +139,7 @@ export default async function AdminDashboard() {
       </Panel>}
 
       {/* Row 3: Intelligence Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <EngageHighlights items={engageItems.slice(0, 4)} date={latestEngageDate} />
+      <div>
         <NewsletterHighlights articles={latestDigestArticles} date={latestDigestDate} />
       </div>
     </div>

@@ -172,56 +172,6 @@ export async function updateTask(
   return rows.length > 0;
 }
 
-// --- Engage Items ---
-
-export interface DbEngageItem {
-  id: string;
-  date: string;
-  type: string;
-  author: string | null;
-  tweet_url: string | null;
-  title: string;
-  context: string | null;
-  suggested_angles: string[];
-  points: number | null;
-  priority: number;
-  created_at: string;
-}
-
-export async function fetchEngageDates(): Promise<string[]> {
-  const rows = await sql()`SELECT DISTINCT date FROM engage_items ORDER BY date DESC`;
-  return rows.map((r) => toDateStr(r.date));
-}
-
-export async function fetchEngageItemsByDate(date: string): Promise<DbEngageItem[]> {
-  const rows = await sql()`SELECT * FROM engage_items WHERE date = ${date} ORDER BY priority`;
-  return rows.map((r) => ({ ...r, date: toDateStr(r.date) })) as unknown as DbEngageItem[];
-}
-
-export async function insertEngageItems(
-  date: string,
-  items: { type: string; author?: string; tweet_url?: string; title: string; context?: string; suggested_angles?: string[]; priority?: number }[]
-): Promise<string[]> {
-  const ids: string[] = [];
-  for (const item of items) {
-    // Dedup: skip if same tweet_url already exists for this date, or same author+date if no URL
-    if (item.tweet_url) {
-      const existing = await sql()`SELECT id FROM engage_items WHERE date = ${date} AND tweet_url = ${item.tweet_url} LIMIT 1`;
-      if (existing.length > 0) continue;
-    } else if (item.author) {
-      const existing = await sql()`SELECT id FROM engage_items WHERE date = ${date} AND author = ${item.author} LIMIT 1`;
-      if (existing.length > 0) continue;
-    }
-    const rows = await sql()`
-      INSERT INTO engage_items (date, type, author, tweet_url, title, context, suggested_angles, priority)
-      VALUES (${date}, ${item.type}, ${item.author || null}, ${item.tweet_url || null}, ${item.title}, ${item.context || null}, ${item.suggested_angles || []}, ${item.priority || 0})
-      RETURNING id
-    `;
-    ids.push(rows[0].id);
-  }
-  return ids;
-}
-
 // --- Newsletter Digests (grouped view) ---
 
 export interface NewsletterArticle {
@@ -307,49 +257,6 @@ export async function fetchNewsletterWeekStarts(): Promise<string[]> {
 
 export async function deleteNewsletterArticle(id: string): Promise<void> {
   await sql()`DELETE FROM newsletter_articles WHERE id = ${id}`;
-}
-
-// --- Engage (week view) ---
-
-export interface EngageDay {
-  date: string;
-  label: string;
-  items: DbEngageItem[];
-}
-
-export async function fetchEngageWeek(start: string, end: string): Promise<EngageDay[]> {
-  const rows = await sql()`
-    SELECT * FROM engage_items
-    WHERE date BETWEEN ${start} AND ${end}
-    ORDER BY date DESC, priority ASC
-  `;
-  if (rows.length === 0) return [];
-
-  const byDate = new Map<string, DbEngageItem[]>();
-  for (const r of rows) {
-    const date = toDateStr(r.date);
-    if (!byDate.has(date)) byDate.set(date, []);
-    byDate.get(date)!.push({ ...r, date } as unknown as DbEngageItem);
-  }
-
-  const days: EngageDay[] = [];
-  for (const [date, items] of byDate) {
-    days.push({ date, label: formatDayLabel(date), items });
-  }
-  return days;
-}
-
-export async function fetchEngageWeekStarts(): Promise<string[]> {
-  const rows = await sql()`SELECT DISTINCT date FROM engage_items ORDER BY date DESC`;
-  const seen = new Set<string>();
-  for (const r of rows) {
-    seen.add(getWeekMonday(toDateStr(r.date)));
-  }
-  return [...seen].sort().reverse();
-}
-
-export async function deleteEngageItem(id: string): Promise<void> {
-  await sql()`DELETE FROM engage_items WHERE id = ${id}`;
 }
 
 // --- X Drafts ---
