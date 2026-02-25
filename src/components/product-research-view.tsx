@@ -1,7 +1,13 @@
-import { ExternalLink, FileSearch } from "lucide-react";
+import { ChevronRight, ExternalLink, FileSearch } from "lucide-react";
 import type { DbProductResearchItem } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { EmptyState } from "@/components/admin/empty-state";
+import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
+import {
+  isFullDocumentResearchTitle,
+  isLongFormProductDocSectionTitle,
+  normalizeResearchTitle,
+} from "@/lib/products";
 
 function formatDate(input: string): string {
   const d = new Date(input);
@@ -9,52 +15,139 @@ function formatDate(input: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function isValidationEvidence(item: DbProductResearchItem): boolean {
+  return (
+    item.source_type === "market_data" ||
+    item.source_type === "competitor" ||
+    item.source_type === "user_feedback"
+  );
+}
+
 export function ProductResearchView({ research }: { research: DbProductResearchItem[] }) {
   if (research.length === 0) {
     return <EmptyState icon={FileSearch} message="No research attached yet." />;
   }
+
+  const fullDocByKey = new Set(
+    research
+      .filter((item) => isFullDocumentResearchTitle(item.title) && Boolean(item.notes?.trim()))
+      .map((item) => normalizeResearchTitle(item.title))
+  );
+
+  const displayResearch = research.filter((item) => {
+    if (isFullDocumentResearchTitle(item.title)) return true;
+    const key = normalizeResearchTitle(item.title);
+    return !fullDocByKey.has(key);
+  });
+
+  const planningDocs = displayResearch.filter((item) =>
+    isLongFormProductDocSectionTitle(item.title)
+  );
+  const validationEvidence = displayResearch.filter(
+    (item) => !isLongFormProductDocSectionTitle(item.title) && isValidationEvidence(item)
+  );
+  const buildConsiderations = displayResearch.filter(
+    (item) =>
+      !isLongFormProductDocSectionTitle(item.title) &&
+      !isValidationEvidence(item)
+  );
+
+  const sections = [
+    {
+      id: "validation",
+      title: "Validation evidence",
+      description: "Signals that confirm the problem and demand are real.",
+      items: validationEvidence,
+    },
+    {
+      id: "planning",
+      title: "Planning docs (PRD, SWOT, strategy)",
+      description: "Core documents that shape scope, risks, and approach.",
+      items: planningDocs,
+    },
+    {
+      id: "build",
+      title: "Build considerations",
+      description: "Execution notes to carry into implementation.",
+      items: buildConsiderations,
+    },
+  ].filter((section) => section.items.length > 0);
 
   return (
     <Panel className="flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
         <div className="flex items-center gap-2">
           <FileSearch size={14} className="text-teal-500" />
-          <span className="text-sm font-medium text-zinc-200">Research</span>
+          <span className="type-body-sm font-medium text-zinc-200">Idea workspace</span>
         </div>
-        <span className="text-xs text-zinc-600 font-mono">{research.length} items</span>
+        <span className="type-body-sm text-zinc-600">{displayResearch.length} items</span>
       </div>
 
       <div className="divide-y divide-zinc-800/20">
-        {research.map((item) => (
-          <div key={item.id} className="px-4 py-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-zinc-200 truncate">{item.title}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500">
-                    {item.source_type.replace("_", " ")}
-                  </span>
-                  <span className="text-[10px] text-zinc-600 font-mono">{formatDate(item.created_at)}</span>
+        {sections.map((section, index) => (
+          <details key={section.id} className="group" open={index === 0}>
+            <summary className="list-none cursor-pointer px-4 py-3 hover:bg-zinc-800/20 transition-colors [&::-webkit-details-marker]:hidden">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <ChevronRight
+                      size={14}
+                      className="text-zinc-500 transition-transform group-open:rotate-90 shrink-0 mt-0"
+                    />
+                    <p className="type-body-sm font-medium text-zinc-200 break-words">{section.title}</p>
+                  </div>
+                  <p className="type-body-sm text-zinc-500 mt-1">{section.description}</p>
                 </div>
+                <span className="type-badge text-zinc-500 mt-1">
+                  {section.items.length} {section.items.length === 1 ? "doc" : "docs"}
+                </span>
               </div>
-              {item.source_url && (
-                <a
-                  href={item.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-teal-500 hover:text-teal-400 transition-colors shrink-0"
-                >
-                  <ExternalLink size={12} />
-                  <span>Source</span>
-                </a>
-              )}
+            </summary>
+
+            <div className="border-t border-zinc-800/20">
+              <div className="divide-y divide-zinc-800/20">
+                {section.items.map((item) => {
+                  const isLongFormDoc = isLongFormProductDocSectionTitle(item.title);
+                  const showSourceLink = Boolean(item.source_url) && !isLongFormDoc;
+
+                  return (
+                    <article key={item.id} className="px-4 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="type-body-sm font-medium text-zinc-200 break-words">{item.title}</p>
+                          <span className="type-body-sm text-zinc-500 mt-1 inline-block">
+                            Captured {formatDate(item.created_at)}
+                          </span>
+                        </div>
+                        {showSourceLink && item.source_url && (
+                          <a
+                            href={item.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 type-body-sm text-teal-500 hover:text-teal-400 transition-colors shrink-0"
+                          >
+                            <ExternalLink size={12} />
+                            <span>Reference link</span>
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="mt-2">
+                        {item.notes ? (
+                          <MarkdownRenderer
+                            content={item.notes}
+                            className="doc-markdown-compact doc-markdown-subtle"
+                          />
+                        ) : (
+                          <p className="type-body-sm text-zinc-500">No notes captured for this section yet.</p>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             </div>
-            {item.notes && (
-              <p className="text-sm text-zinc-500 leading-relaxed mt-2 whitespace-pre-wrap">
-                {item.notes}
-              </p>
-            )}
-          </div>
+          </details>
         ))}
       </div>
     </Panel>
