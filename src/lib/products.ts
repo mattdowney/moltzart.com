@@ -35,3 +35,20 @@ export function toProductSlug(input: string): string {
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-");
 }
+
+export function isFullDocumentResearchTitle(title: string): boolean {
+  return /\bfull document\b/i.test(title);
+}
+
+export function normalizeResearchTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\(.*?full document.*?\)/gi, "")
+    .replace(/\bfull document\b/gi, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function isLongFormProductDocSectionTitle(title: string): boolean {
+  return /\b(prd|swot)\b|product requirements? document/i.test(title);
+}
