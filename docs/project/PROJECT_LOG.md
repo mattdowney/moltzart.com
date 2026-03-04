@@ -7,10 +7,14 @@
 - Created `job_runs` table (id, job_id FK, agent_id, started_at, completed_at, status, summary) with indexes on started_at and job_id. Agents will POST execution reports here.
 - Added `POST /api/ingest/crons/run` endpoint — agents report job starts/completions. Supports both creating new runs and updating existing ones (via `run_id`).
 - Added `DbJobRun` interface and DB functions: `insertJobRun`, `updateJobRun`, `fetchJobRunsForRange`.
-- `CalendarView` now cross-references projected cron times with actual `job_runs` entries. Each event card shows status: green dot (ran), red (error), amber (missed — the key accountability signal), dim (upcoming), blue pulse (running).
-- High-frequency jobs (heartbeat every 15min, sync every 30min, auto-push hourly) correctly routed to "Always Running" pills section.
-- **Decision:** Run matching is date-based (job_id + date key), not exact-time. A job with a run anywhere in the same day counts as matched. This is intentional — agents may run slightly off-schedule.
-- **Next:** Agents need to start calling `POST /api/ingest/crons/run` when their scheduled jobs execute. Until then, all past events show as "missed."
+- `CalendarView` now cross-references projected cron times with actual `job_runs` entries. Each event card shows status: green dot (ran), red (error), amber (missed), dim (upcoming), blue pulse (running).
+- Replaced `cron-parser` library with a manual cron field expander. Removed `cron-parser` dependency entirely.
+- UI refinements per Matt's feedback: Monday-start weeks, past day columns dimmed (not future), date numbers in column headers, removed Week/Today buttons (arrows + refresh only), "Always On" pills moved to a row above the grid with legend right-aligned, always-on pills use uniform zinc color.
+- **Decision:** Run matching is date-based (job_id + date key), not exact-time. A job with a run anywhere in the same day counts as matched — agents may run slightly off-schedule.
+- **Decision:** Manual cron expander over `cron-parser` library. Parses the 5 standard cron fields (specific values, `*`, `*/N`, ranges, comma-lists) and matches against each day's DOW. No timezone-aware Date iteration needed — pure field matching.
+- **Watch:** `cron-parser` v5.5.0 has a confirmed DST bug — it silently skips the entire spring-forward day (March 8, 2026 for ET). The iterator returns "Out of the time span range" with zero results regardless of buffer size. This affected Sunday display. The manual expander completely sidesteps this since it never constructs timezone-dependent Date objects for iteration.
+- **Learned:** The DST bug wasn't in Date construction or filtering — it was deep in cron-parser's internal iterator. Per-day parsing with buffers didn't help because the library itself refuses to generate any occurrence on the DST transition day. Only fix is to not use the library's iterator at all.
+- **Next:** Agents need to start calling `POST /api/ingest/crons/run` when their scheduled jobs execute. Until then, all past events show as "missed." Commit + push still pending.
 
 ## 2026-03-04 (session 17)
 

@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw, Zap } from "lucide-react";
-import { CronExpressionParser } from "cron-parser";
+import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import type { DbCronJob, DbJobRun } from "@/lib/db";
 
 // --- Types ---
@@ -45,31 +44,31 @@ const CARD_COLORS = [
 ];
 
 const PILL_COLORS = [
-  "text-emerald-400 border-emerald-400/30",
-  "text-amber-400 border-amber-400/30",
-  "text-blue-400 border-blue-400/30",
-  "text-rose-400 border-rose-400/30",
-  "text-purple-400 border-purple-400/30",
-  "text-teal-400 border-teal-400/30",
-  "text-orange-400 border-orange-400/30",
-  "text-cyan-400 border-cyan-400/30",
-  "text-pink-400 border-pink-400/30",
-  "text-lime-400 border-lime-400/30",
+  "text-emerald-400/70 border-emerald-400/20",
+  "text-amber-400/70 border-amber-400/20",
+  "text-blue-400/70 border-blue-400/20",
+  "text-rose-400/70 border-rose-400/20",
+  "text-purple-400/70 border-purple-400/20",
+  "text-teal-400/70 border-teal-400/20",
+  "text-orange-400/70 border-orange-400/20",
+  "text-cyan-400/70 border-cyan-400/20",
+  "text-pink-400/70 border-pink-400/20",
+  "text-lime-400/70 border-lime-400/20",
 ];
 
 // --- Status indicator styles ---
 
-const STATUS_INDICATOR: Record<RunStatus, { dot: string; border: string; opacity: string }> = {
-  success: { dot: "bg-emerald-400", border: "border-emerald-400/20", opacity: "" },
-  error: { dot: "bg-red-400", border: "border-red-400/20", opacity: "" },
-  missed: { dot: "bg-amber-400", border: "border-amber-400/20", opacity: "" },
-  running: { dot: "bg-blue-400 animate-pulse", border: "border-blue-400/20", opacity: "" },
-  upcoming: { dot: "bg-zinc-600", border: "border-zinc-800/40", opacity: "opacity-40" },
+const STATUS_INDICATOR: Record<RunStatus, { dot: string; border: string }> = {
+  success: { dot: "bg-emerald-400", border: "border-emerald-400/20" },
+  error: { dot: "bg-red-400", border: "border-red-400/20" },
+  missed: { dot: "bg-amber-400", border: "border-amber-400/20" },
+  running: { dot: "bg-blue-400 animate-pulse", border: "border-blue-400/20" },
+  upcoming: { dot: "bg-zinc-600", border: "border-zinc-800/40" },
 };
 
-// --- Date helpers ---
+// --- Date helpers (Monday-start week) ---
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function fmtDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -85,9 +84,13 @@ function getWeekDays(startDate: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
 }
 
+/** Get Monday of the week containing dateStr */
 function getWeekStart(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  d.setDate(d.getDate() - d.getDay());
+  const day = d.getDay();
+  // Monday=0 offset: Sun(0)->-6, Mon(1)->0, Tue(2)->-1, ...
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
   return fmtDate(d);
 }
 
@@ -114,6 +117,64 @@ function formatWeekLabel(startDate: string): string {
   return `${start.toLocaleDateString("en-US", { month: "short" })} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`;
 }
 
+// --- Cron field parser (bypasses cron-parser DST bug) ---
+
+function parseCronField(field: string, min: number, max: number): number[] {
+  if (field === "*") return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  if (field.startsWith("*/")) {
+    const step = parseInt(field.slice(2));
+    const result: number[] = [];
+    for (let i = min; i <= max; i += step) result.push(i);
+    return result;
+  }
+  if (field.includes(",")) return field.split(",").map(Number);
+  if (field.includes("-")) {
+    const [lo, hi] = field.split("-").map(Number);
+    return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+  }
+  return [parseInt(field)];
+}
+
+function cronMatchesDay(dowField: string, jsDay: number): boolean {
+  // JS: 0=Sun, cron: 0=Sun (or 7=Sun)
+  const dows = parseCronField(dowField, 0, 6);
+  return dows.includes(jsDay) || (jsDay === 0 && dows.includes(7));
+}
+
+function formatHM(h: number, m: number): string {
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m === 0 ? `${h12}:00 ${ampm}` : `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function sortKeyHM(h: number, m: number): string {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+interface CronRun {
+  dateKey: string;
+  hour: number;
+  minute: number;
+}
+
+function expandCron(expr: string, weekDays: string[]): CronRun[] {
+  const [minField, hourField, , , dowField] = expr.split(" ");
+  const minutes = parseCronField(minField, 0, 59);
+  const hours = parseCronField(hourField, 0, 23);
+  const runs: CronRun[] = [];
+
+  for (const dayStr of weekDays) {
+    const d = new Date(dayStr + "T12:00:00");
+    if (!cronMatchesDay(dowField, d.getDay())) continue;
+    for (const h of hours) {
+      for (const m of minutes) {
+        runs.push({ dateKey: dayStr, hour: h, minute: m });
+      }
+    }
+  }
+  return runs;
+}
+
 // --- Cron expansion with run status ---
 
 interface AlwaysRunningJob {
@@ -129,12 +190,9 @@ function categorizeCrons(
 ): { alwaysRunning: AlwaysRunningJob[]; scheduled: Map<string, DayEvent[]> } {
   const alwaysRunning: AlwaysRunningJob[] = [];
   const scheduled = new Map<string, DayEvent[]>();
-  const now = new Date();
-  const weekStart = new Date(weekDays[0] + "T00:00:00");
-  weekStart.setDate(weekStart.getDate() - 1);
-  const weekEnd = new Date(weekDays[6] + "T23:59:59");
-  weekEnd.setDate(weekEnd.getDate() + 1);
-  const validDays = new Set(weekDays);
+  const todayStr = fmtDate(new Date());
+  const nowH = new Date().getHours();
+  const nowM = new Date().getMinutes();
 
   // Index job runs by job_id + date for quick lookup
   const runIndex = new Map<string, DbJobRun[]>();
@@ -154,25 +212,8 @@ function categorizeCrons(
     if (!job.enabled) continue;
     const colorIdx = colorMap.get(job.name) ?? 0;
 
-    let runs: Date[] = [];
-    try {
-      const interval = CronExpressionParser.parse(job.schedule_expr, {
-        currentDate: weekStart,
-        endDate: weekEnd,
-        tz: job.schedule_tz,
-      });
-      while (true) {
-        try {
-          runs.push(interval.next().toDate());
-        } catch {
-          break;
-        }
-      }
-    } catch {
-      continue;
-    }
+    const weekRuns = expandCron(job.schedule_expr, weekDays);
 
-    const weekRuns = runs.filter((r) => validDays.has(fmtDate(r)));
     if (weekRuns.length > 100) {
       const perDay = Math.round(weekRuns.length / 7);
       const freq = perDay >= 24 ? `Every ${Math.round((24 * 60) / perDay)} min` : `${perDay}x daily`;
@@ -180,39 +221,35 @@ function categorizeCrons(
       continue;
     }
 
-    for (const runDate of weekRuns) {
-      const dateKey = fmtDate(runDate);
-      if (!scheduled.has(dateKey)) scheduled.set(dateKey, []);
+    for (const run of weekRuns) {
+      if (!scheduled.has(run.dateKey)) scheduled.set(run.dateKey, []);
 
-      // Determine run status
-      const matchKey = `${job.id}:${dateKey}`;
+      const matchKey = `${job.id}:${run.dateKey}`;
       const matchingRuns = runIndex.get(matchKey) || [];
       let status: RunStatus;
       let summary: string | undefined;
 
-      if (runDate > now) {
+      const isFuture = run.dateKey > todayStr ||
+        (run.dateKey === todayStr && (run.hour > nowH || (run.hour === nowH && run.minute > nowM)));
+
+      if (isFuture) {
         status = "upcoming";
       } else if (matchingRuns.length > 0) {
-        // Find the best matching run (closest to expected time)
-        const bestRun = matchingRuns.reduce((best, r) => {
-          const diff = Math.abs(new Date(r.started_at).getTime() - runDate.getTime());
-          const bestDiff = Math.abs(new Date(best.started_at).getTime() - runDate.getTime());
-          return diff < bestDiff ? r : best;
-        });
+        const bestRun = matchingRuns[0];
         status = bestRun.status as RunStatus;
         if (status !== "success" && status !== "error" && status !== "running") {
-          status = "success"; // treat unknown statuses as success
+          status = "success";
         }
         summary = bestRun.summary || undefined;
       } else {
         status = "missed";
       }
 
-      scheduled.get(dateKey)!.push({
+      scheduled.get(run.dateKey)!.push({
         name: job.name,
         jobId: job.id,
-        time: formatTime(runDate),
-        sortKey: formatTimeSortKey(runDate),
+        time: formatHM(run.hour, run.minute),
+        sortKey: sortKeyHM(run.hour, run.minute),
         colorIdx,
         status,
         summary,
@@ -251,7 +288,6 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
 
   const goPrev = useCallback(() => loadWeek(addDays(weekStart, -7)), [weekStart, loadWeek]);
   const goNext = useCallback(() => loadWeek(addDays(weekStart, 7)), [weekStart, loadWeek]);
-  const goToday = useCallback(() => loadWeek(getWeekStart(fmtDate(new Date()))), [loadWeek]);
   const refresh = useCallback(() => loadWeek(weekStart), [weekStart, loadWeek]);
 
   const { alwaysRunning, scheduled } = useMemo(
@@ -268,80 +304,79 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
           <p className="text-sm text-zinc-500">{formatWeekLabel(weekStart)}</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <button onClick={goToday} className="rounded-md border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-sm font-medium text-zinc-200 hover:bg-zinc-700/80 transition-colors">
-            Week
-          </button>
-          <button onClick={goToday} className="rounded-md border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            Today
-          </button>
           <button onClick={refresh} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button onClick={goPrev} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
           </button>
           <button onClick={goNext} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="size-4" />
           </button>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-zinc-500">
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-emerald-400" /> Ran</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-red-400" /> Error</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" /> Missed</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-zinc-600" /> Upcoming</span>
+      {/* Always On + Legend row */}
+      <div className="flex items-center justify-between gap-4">
+        {alwaysRunning.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-wider text-zinc-600 shrink-0">Always on</span>
+            <div className="flex flex-wrap gap-1.5">
+              {alwaysRunning.map((job) => (
+                <span
+                  key={job.name}
+                  className="inline-flex items-center rounded-full border border-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-500 bg-zinc-900/50"
+                >
+                  {job.name} · {job.frequency}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-4 text-xs text-zinc-500 shrink-0 ml-auto">
+          <span className="flex items-center gap-1.5"><span className="inline-block size-2 rounded-full bg-emerald-400" /> Ran</span>
+          <span className="flex items-center gap-1.5"><span className="inline-block size-2 rounded-full bg-red-400" /> Error</span>
+          <span className="flex items-center gap-1.5"><span className="inline-block size-2 rounded-full bg-amber-400" /> Missed</span>
+          <span className="flex items-center gap-1.5"><span className="inline-block size-2 rounded-full bg-zinc-600" /> Upcoming</span>
+        </div>
       </div>
 
-      {/* Always Running */}
-      {alwaysRunning.length > 0 && (
-        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="h-4 w-4 text-amber-400" />
-            <span className="text-sm font-medium text-zinc-200">Always Running</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {alwaysRunning.map((job) => (
-              <span
-                key={job.name}
-                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${PILL_COLORS[job.colorIdx]} bg-zinc-800/50`}
-              >
-                {job.name} &middot; {job.frequency}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Weekly columns */}
-      <div className={`grid grid-cols-7 gap-px bg-zinc-800/30 rounded-lg border border-zinc-800/50 overflow-hidden ${loading ? "opacity-50 pointer-events-none" : ""}`}>
-        {weekDays.map((dateKey) => {
-          const d = new Date(dateKey + "T12:00:00");
-          const isToday = dateKey === todayKey;
-          const events = scheduled.get(dateKey) || [];
+      <div className={`rounded-lg border border-zinc-800/50 overflow-hidden ${loading ? "opacity-50 pointer-events-none" : ""}`}>
+        <div className="grid grid-cols-7 gap-px bg-zinc-800/30">
+          {weekDays.map((dateKey, idx) => {
+            const d = new Date(dateKey + "T12:00:00");
+            const isToday = dateKey === todayKey;
+            const isPast = dateKey < todayKey;
+            const events = scheduled.get(dateKey) || [];
 
-          return (
-            <div key={dateKey} className="bg-zinc-950 flex flex-col min-h-0">
-              {/* Day header */}
-              <div className={`px-3 py-2.5 border-b border-zinc-800/50 ${isToday ? "bg-zinc-900/50" : ""}`}>
-                <span className={`text-sm font-semibold ${isToday ? "text-teal-400" : "text-zinc-300"}`}>
-                  {WEEKDAYS[d.getDay()]}
-                </span>
-              </div>
+            return (
+              <div key={dateKey} className={`bg-zinc-950 flex flex-col min-h-0 ${isPast ? "opacity-50" : ""}`}>
+                {/* Day header */}
+                <div className={`px-3 py-2.5 border-b border-zinc-800/50 flex items-center justify-between ${isToday ? "bg-zinc-900/50" : ""}`}>
+                  <span className={`text-sm font-semibold ${isToday ? "text-teal-400" : "text-zinc-300"}`}>
+                    {WEEKDAYS[idx]}
+                  </span>
+                  <span className={`text-sm ${isToday ? "text-teal-400/70" : "text-zinc-600"}`}>
+                    {d.getDate()}
+                  </span>
+                </div>
 
-              {/* Event cards */}
-              <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto max-h-[calc(100vh-18rem)]">
-                {events.map((ev, i) => (
-                  <EventCard key={`${ev.jobId}-${ev.sortKey}-${i}`} event={ev} />
-                ))}
-                {events.length === 0 && (
-                  <div className="text-xs text-zinc-700 text-center py-4">—</div>
-                )}
+                {/* Event cards */}
+                <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto max-h-[calc(100vh-20rem)]">
+                  {events.map((ev, i) => (
+                    <EventCard key={`${ev.jobId}-${ev.sortKey}-${i}`} event={ev} />
+                  ))}
+                  {events.length === 0 && (
+                    <div className="text-xs text-zinc-700 text-center py-4">—</div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+
       </div>
     </div>
   );
@@ -353,11 +388,11 @@ function EventCard({ event }: { event: DayEvent }) {
 
   return (
     <div
-      className={`rounded-md bg-zinc-900/80 border px-2.5 py-2 ${si.border} ${si.opacity}`}
+      className={`rounded-md bg-zinc-900/80 border px-2.5 py-2 ${si.border}`}
       title={event.summary || undefined}
     >
       <div className="flex items-center gap-1.5">
-        <span className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${si.dot}`} />
+        <span className={`inline-block size-1.5 rounded-full shrink-0 ${si.dot}`} />
         <span className={`text-xs font-medium truncate ${colorClass}`}>
           {event.name}
         </span>

@@ -7,13 +7,15 @@ function getWeekRange(date: Date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   const day = d.getDay();
-  const sun = new Date(d);
-  sun.setDate(d.getDate() - day);
-  const sat = new Date(sun);
-  sat.setDate(sun.getDate() + 6);
+  // Monday-start: Sun(0)->-6, Mon(1)->0, Tue(2)->-1, ...
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon = new Date(d);
+  mon.setDate(d.getDate() + diff);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
   const fmt = (dt: Date) =>
     `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-  return { start: fmt(sun), end: fmt(sat) };
+  return { start: fmt(mon), end: fmt(sun) };
 }
 
 export default async function AdminCalendar() {
