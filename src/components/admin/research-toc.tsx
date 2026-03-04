@@ -1,53 +1,63 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronRight, ChevronDown, List } from "lucide-react";
-import { Panel } from "@/components/admin/panel";
+import { useEffect, useState } from "react";
 
 interface ResearchTocProps {
   headings: Array<{ id: string; text: string }>;
 }
 
 export function ResearchToc({ headings }: ResearchTocProps) {
-  const [collapsed, setCollapsed] = useState(headings.length < 3);
+  const [activeId, setActiveId] = useState<string>("");
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "0px 0px -80% 0px" }
+    );
+
+    for (const { id } of headings) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [headings]);
 
   if (headings.length === 0) return null;
 
-  const Chevron = collapsed ? ChevronRight : ChevronDown;
-
   return (
-    <Panel>
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/20 transition-colors rounded-lg"
-      >
-        <List size={16} className="text-zinc-500 shrink-0" />
-        <span className="text-sm font-medium text-zinc-200 flex-1 text-left">
-          On this page
-        </span>
-        <Chevron size={14} className="text-zinc-600" />
-      </button>
-      {!collapsed && (
-        <div className="px-4 pb-3 border-t border-zinc-800/30">
-          <nav className="space-y-1.5 pt-3">
-            {headings.map((heading) => (
-              <a
-                key={heading.id}
-                href={`#${heading.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById(heading.id)
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="block text-sm text-teal-400 hover:text-teal-300 transition-colors"
-              >
-                {heading.text}
-              </a>
-            ))}
-          </nav>
-        </div>
-      )}
-    </Panel>
+    <nav className="sticky top-6">
+      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+        On this page
+      </p>
+      <ul className="space-y-0.5">
+        {headings.map((heading) => (
+          <li key={heading.id}>
+            <a
+              href={`#${heading.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById(heading.id)
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className={`block text-sm pl-3 py-1 border-l-2 transition-colors ${
+                activeId === heading.id
+                  ? "text-teal-400 border-l-teal-400"
+                  : "text-zinc-500 border-l-transparent hover:text-zinc-300"
+              }`}
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
