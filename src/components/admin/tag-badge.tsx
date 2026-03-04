@@ -59,6 +59,34 @@ export function PillarTag({ pillar }: { pillar: string }) {
   );
 }
 
+import type { ProjectStatus, ProjectKind } from "@/lib/projects";
+import { STATUS_META } from "@/lib/projects";
+
+export function StatusTag({ status }: { status: ProjectStatus }) {
+  const meta = STATUS_META[status];
+  const Icon = meta.icon;
+  return (
+    <span className={`${tagBase} ${meta.bg} ${meta.tone} gap-1`}>
+      <Icon size={10} />
+      {meta.label}
+    </span>
+  );
+}
+
+const kindColors: Record<ProjectKind, string> = {
+  product: "bg-blue-500/20 text-blue-400",
+  general: "bg-zinc-700/40 text-zinc-400",
+};
+
+export function KindTag({ kind }: { kind: ProjectKind }) {
+  const colors = kindColors[kind];
+  return (
+    <span className={`${tagBase} ${colors}`}>
+      {kind}
+    </span>
+  );
+}
+
 export const domainColors: Record<string, string> = {
   product: "bg-blue-500/20 text-blue-400",
   marketing: "bg-amber-500/20 text-amber-400",

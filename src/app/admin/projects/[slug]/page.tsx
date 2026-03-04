@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ChevronRight, FileSearch, FolderKanban, Lightbulb } from "lucide-react";
+import { ChevronRight, FileSearch, FolderKanban, Lightbulb } from "lucide-react";
 import { fetchProjectBySlug } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { EmptyState } from "@/components/admin/empty-state";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
 import { ProductResearchView } from "@/components/product-research-view";
-import { DomainTag } from "@/components/admin/tag-badge";
+import { DomainTag, StatusTag, KindTag } from "@/components/admin/tag-badge";
+import { PageHeader } from "@/components/admin/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -30,23 +31,25 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/admin/projects"
-        className="inline-flex items-center gap-1 type-body-sm text-zinc-500 hover:text-teal-400 transition-colors"
+      <PageHeader
+        title={project.title}
+        subtitle={`Updated ${formatDate(project.updated_at)}`}
+        breadcrumbs={[
+          { label: "Projects", href: "/admin/projects" },
+          { label: project.title },
+        ]}
       >
-        <ArrowLeft size={12} />
-        <span>Back to projects</span>
-      </Link>
-
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="type-badge text-zinc-500">{project.kind}</span>
-          <span className="type-badge text-zinc-500">{project.status}</span>
-          <span className="type-badge text-zinc-600">Updated {formatDate(project.updated_at)}</span>
-          {linkedProduct && <span className="type-badge text-zinc-600">Product-linked</span>}
-        </div>
-        <h1 className="type-h2 text-zinc-100">{project.title}</h1>
-      </header>
+        <StatusTag status={project.status} />
+        <KindTag kind={project.kind} />
+        {linkedProduct && (
+          <Link
+            href={`/admin/products/${linkedProduct.slug}`}
+            className="type-badge text-zinc-500 hover:text-teal-400 transition-colors"
+          >
+            {linkedProduct.title}
+          </Link>
+        )}
+      </PageHeader>
 
       {hasProjectOverview && (
         <Panel className="px-4 py-4">

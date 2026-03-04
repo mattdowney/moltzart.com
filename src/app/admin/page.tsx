@@ -11,6 +11,7 @@ import { normalizeTaskStatusInput } from "@/lib/task-workflow";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/admin/status-dot";
 import { Panel } from "@/components/admin/panel";
+import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { NewsletterHighlights } from "@/components/dashboard/newsletter-highlights";
 
@@ -72,6 +73,8 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="Dashboard" />
+
       {/* Row 1: Metrics strip */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard

@@ -3,8 +3,7 @@ import { fetchXDraftsWeek, fetchXDraftWeekStarts } from "@/lib/db";
 import { getWeekBounds, formatWeekLabel } from "@/lib/newsletter-weeks";
 import { DraftsView } from "@/components/drafts-view";
 import { WeekSelector } from "@/components/week-selector";
-import { PenLine } from "lucide-react";
-import { Panel } from "@/components/admin/panel";
+import { PageHeader } from "@/components/admin/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -30,19 +29,14 @@ export default async function DraftsWeekPage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <Panel>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <PenLine size={14} className="text-teal-500" />
-            {weekStarts.length > 0 ? (
-              <WeekSelector currentWeek={week} availableWeeks={weekStarts} basePath="/admin/drafts" />
-            ) : (
-              <span className="type-body-sm font-medium text-zinc-200">{formatWeekLabel(week)}</span>
-            )}
-          </div>
-          <span className="type-body-sm text-zinc-600">{totalDrafts} drafts</span>
-        </div>
-      </Panel>
+      <PageHeader title="Drafts">
+        {weekStarts.length > 0 ? (
+          <WeekSelector currentWeek={week} availableWeeks={weekStarts} basePath="/admin/drafts" />
+        ) : (
+          <span className="type-body-sm text-zinc-500">{formatWeekLabel(week)}</span>
+        )}
+        <span className="type-body-sm text-zinc-500">{totalDrafts} drafts</span>
+      </PageHeader>
       <DraftsView days={days} />
     </div>
   );

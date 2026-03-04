@@ -1,18 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Archive,
-  Briefcase,
-  ChevronRight,
-  Hammer,
-  Lightbulb,
-  Rocket,
-  Search,
-  type LucideIcon,
-} from "lucide-react";
+import { Briefcase, ChevronRight } from "lucide-react";
 import type { DbProject } from "@/lib/db";
 import type { ProjectStatus } from "@/lib/projects";
+import { STATUS_META } from "@/lib/projects";
 import { Panel } from "@/components/admin/panel";
 import { EmptyState } from "@/components/admin/empty-state";
 
@@ -23,14 +15,6 @@ const STATUS_ORDER: ProjectStatus[] = [
   "launched",
   "archived",
 ];
-
-const STATUS_META: Record<ProjectStatus, { label: string; tone: string; icon: LucideIcon }> = {
-  idea: { label: "Idea", tone: "text-zinc-300", icon: Lightbulb },
-  researching: { label: "Researching", tone: "text-teal-500", icon: Search },
-  building: { label: "Building", tone: "text-teal-500", icon: Hammer },
-  launched: { label: "Launched", tone: "text-teal-500", icon: Rocket },
-  archived: { label: "Archived", tone: "text-zinc-500", icon: Archive },
-};
 
 function formatDate(input: string): string {
   const d = new Date(input);
@@ -54,7 +38,7 @@ export function ProjectsView({ projects }: { projects: DbProject[] }) {
           <Panel key={status} className="flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
               <div className="flex items-center gap-2">
-                <Icon size={14} className="text-teal-500" />
+                <Icon size={14} className={STATUS_META[status].tone} />
                 <span className={`type-body-sm font-medium ${STATUS_META[status].tone}`}>
                   {STATUS_META[status].label}
                 </span>

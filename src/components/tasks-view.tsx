@@ -5,11 +5,11 @@ import type { DbTask } from "@/lib/db";
 import {
   Calendar,
   CircleAlert,
-  ListTodo,
   RefreshCw,
   GripVertical,
 } from "lucide-react";
 import { Panel } from "@/components/admin/panel";
+import { PageHeader } from "@/components/admin/page-header";
 import {
   Sheet,
   SheetContent,
@@ -300,36 +300,32 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
   };
 
   return (
-    <Panel className="flex flex-col h-[calc(100svh-6rem)] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
-        <div className="flex items-center gap-2">
-          <ListTodo size={14} className="text-teal-500" />
-          <span className="type-body-sm font-medium text-zinc-200">Tasks</span>
-          <span className="flex items-center gap-2 type-body-sm">
-            <span className="text-zinc-300">{stats.backlog}</span>
-            <span className="text-zinc-600">backlog</span>
-            <span className="text-zinc-300">{stats.todo}</span>
-            <span className="text-zinc-600">todo</span>
-            <span className="text-amber-400">{stats.inProgress}</span>
-            <span className="text-zinc-600">in progress</span>
-            <span className="text-emerald-400">{stats.done}</span>
-            <span className="text-zinc-600">done</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          {savingTaskId && (
-            <span className="type-body-sm text-zinc-600">saving...</span>
-          )}
-          <button
-            onClick={refresh}
-            disabled={loading}
-            className="text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
-            title="Refresh"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title="Tasks">
+        <span className="flex items-center gap-2 type-body-sm">
+          <span className="text-zinc-300">{stats.backlog}</span>
+          <span className="text-zinc-600">backlog</span>
+          <span className="text-zinc-300">{stats.todo}</span>
+          <span className="text-zinc-600">todo</span>
+          <span className="text-amber-400">{stats.inProgress}</span>
+          <span className="text-zinc-600">in progress</span>
+          <span className="text-emerald-400">{stats.done}</span>
+          <span className="text-zinc-600">done</span>
+        </span>
+        {savingTaskId && (
+          <span className="type-body-sm text-zinc-600">saving...</span>
+        )}
+        <button
+          onClick={refresh}
+          disabled={loading}
+          className="text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
+          title="Refresh"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+        </button>
+      </PageHeader>
+
+      <Panel className="flex flex-col h-[calc(100svh-10rem)] overflow-hidden">
 
       {error && (
         <div className="px-4 py-2 border-b border-zinc-800/30">
@@ -428,5 +424,6 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
         </SheetContent>
       </Sheet>
     </Panel>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, FileSearch } from "lucide-react";
 import { DomainTag } from "@/components/admin/tag-badge";
@@ -7,7 +6,7 @@ import { Panel } from "@/components/admin/panel";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
 import { extractHeadings } from "@/lib/research-headings";
 import { ResearchToc } from "@/components/admin/research-toc";
-import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
+import { PageHeader } from "@/components/admin/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -52,36 +51,28 @@ export default async function AdminResearchDetailPage({ params }: Props) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_14rem] gap-8">
-      <div className="space-y-4 min-w-0">
-        <AdminBreadcrumb
-          items={[
+      <div className="min-w-0 lg:border-r lg:border-zinc-800 lg:pr-8">
+        <PageHeader
+          title={artifact.title}
+          breadcrumbs={[
             { label: "Research", href: "/admin/research" },
+            ...(linkedProject
+              ? [{ label: linkedProject.project.title, href: `/admin/projects/${linkedProject.project.slug}` }]
+              : []),
             { label: artifact.title },
           ]}
         />
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-sm text-zinc-500">{formatDate(artifact.created_at)}</span>
+          <DomainTag domain={artifact.domain} />
+        </div>
 
-        <header className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <DomainTag domain={artifact.domain} />
-            {linkedProject && (
-              <Link
-                href={`/admin/projects/${linkedProject.project.slug}`}
-                className="type-badge text-zinc-500 hover:text-teal-400 transition-colors"
-              >
-                Project: {linkedProject.project.title}
-              </Link>
-            )}
-          </div>
-          <h1 className="type-h2 text-zinc-100">{artifact.title}</h1>
-          <p className="type-body-sm text-zinc-600">{formatDate(artifact.created_at)}</p>
-        </header>
-
-        <Panel className="px-4 py-4">
-          <MarkdownRenderer content={artifact.body_md} generateIds />
-        </Panel>
+        <div className="mt-6">
+          <MarkdownRenderer content={artifact.body_md} generateIds skipFirstH1 />
+        </div>
 
         {sourceLinks.length > 0 && (
-          <Panel className="flex flex-col">
+          <Panel className="flex flex-col mt-4">
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/30">
               <div className="flex items-center gap-2">
                 <FileSearch size={14} className="text-teal-500" />

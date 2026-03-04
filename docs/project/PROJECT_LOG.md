@@ -1,5 +1,22 @@
 # Project Log
 
+## 2026-03-04 (session 19)
+
+- Restructured `/admin/research/[id]` layout: breadcrumb gets a 1px divider below it, badges (domain tag + project link) moved to separate positions — project is now a breadcrumb segment, domain tag sits next to the date below the title. Removed Panel wrapper from markdown content, replaced with a vertical `border-r` divider between content and TOC columns.
+- Added `skipFirstH1` prop to `MarkdownRenderer` — suppresses the first `<h1>` in rendered markdown to avoid triple-title (breadcrumb + PageHeader h1 + markdown h1).
+- Overhauled markdown table styling with custom ReactMarkdown components — rounded bordered container, header background, proper cell padding, row dividers. Replaced inline prose-table/th/td utilities.
+- Dropped all body text to `text-sm` (14px) per design system — updated `.type-body`, `.doc-markdown` prose rules, and `MarkdownRenderer` inline classes. Added `prose-sm` base modifier.
+- Added `Grainient` WebGL background component (from react-bits) to the public homepage. Installed `ogl` dependency. Created `DialKit` tuner for real-time prop tuning, then locked in final values and removed DialKit.
+- Also created `FaultyTerminal` component (react-bits) but removed it in favor of Grainient.
+- Homepage text updated: all elements use `text-zinc-100`, title/arrows/social icons at 40% opacity.
+- **Decision:** `PageHeader` breadcrumb divider (`mb-8 pb-4 border-b border-zinc-800`) is in the shared component, affecting all admin pages with breadcrumbs. This is intentional — consistent section separation.
+- **Decision:** Research page TOC column now starts at the same grid row as the title (grid wraps everything, not just content). Gives better vertical alignment.
+- **Learned:** WebGL background components with `-z-10` won't receive mouse events — the content layer blocks them. Fix: listen on `window` instead of the container element for mouse tracking.
+- **Learned:** OGL components using `window.devicePixelRatio` in default props break SSR/static generation. Guard with `typeof window !== "undefined"`.
+- **Watch:** The `MarkdownRenderer` now always passes a `components` object (tables, and conditionally h1/h2). Previously it was `undefined` when `generateIds` was false. No breakage observed but worth knowing if debugging rendering differences.
+- **Watch:** `dialkit` and `motion` packages are installed but only used by the tuner components (not in production renders). Could be removed as devDependencies if bundle size matters.
+- **Next:** Commit and push all changes. FaultyTerminal component + tuner files can be cleaned up (dead code) if not needed as a future option. Grainient tuner files similarly optional to keep.
+
 ## 2026-03-04 (session 18)
 
 - Refocused `/admin/calendar` as an **agent accountability view** — removed tasks, drafts, newsletter (those belong on their own pages). Calendar now exclusively tracks scheduled cron jobs and their execution status.

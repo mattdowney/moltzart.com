@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ChevronRight, FileSearch } from "lucide-react";
 import { DomainTag } from "@/components/admin/tag-badge";
 import { fetchResearchArtifactsDb, fetchProjectsDb, type DbResearchArtifact, type DbProject } from "@/lib/db";
-import { Panel } from "@/components/admin/panel";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ResearchGroup } from "@/components/admin/research-group";
+import { PageHeader } from "@/components/admin/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -76,15 +76,9 @@ export default async function AdminResearchPage() {
 
   return (
     <div className="space-y-4">
-      <Panel>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <FileSearch size={14} className="text-teal-500" />
-            <span className="type-body-sm font-medium text-zinc-200">Research</span>
-          </div>
-          <span className="type-body-sm text-zinc-600">{artifacts.length} artifacts</span>
-        </div>
-      </Panel>
+      <PageHeader title="Research">
+        <span className="type-body-sm text-zinc-500">{artifacts.length} artifacts</span>
+      </PageHeader>
 
       {artifacts.length === 0 ? (
         <EmptyState icon={FileSearch} message="No research artifacts yet." />

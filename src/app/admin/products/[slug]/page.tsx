@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Archive,
-  ArrowLeft,
   FileText,
   Hammer,
   Lightbulb,
@@ -14,6 +12,7 @@ import { fetchProductBySlug } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
 import { ProductResearchView } from "@/components/product-research-view";
+import { PageHeader } from "@/components/admin/page-header";
 import type { ProductStatus } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
@@ -52,22 +51,14 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/admin/products"
-        className="inline-flex items-center gap-1 type-body-sm text-zinc-500 hover:text-teal-400 transition-colors"
-      >
-        <ArrowLeft size={12} />
-        <span>Back to products</span>
-      </Link>
-
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusIcon size={14} className="text-teal-500" />
-          <span className="type-badge text-zinc-500">{statusMeta.label}</span>
-          <span className="type-badge text-zinc-600">Updated {formatDate(product.updated_at)}</span>
-        </div>
-        <h1 className="type-h2 text-zinc-100">{product.title}</h1>
-      </header>
+      <PageHeader
+        title={product.title}
+        subtitle={`${statusMeta.label} · Updated ${formatDate(product.updated_at)}`}
+        breadcrumbs={[
+          { label: "Products", href: "/admin/products" },
+          { label: product.title },
+        ]}
+      />
 
       {foundationSections.length > 0 && (
         <Panel className="flex flex-col">

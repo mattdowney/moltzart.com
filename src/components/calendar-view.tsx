@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import type { DbCronJob, DbJobRun } from "@/lib/db";
+import { PageHeader } from "@/components/admin/page-header";
 
 // --- Types ---
 
@@ -297,24 +298,17 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-100">Calendar</h1>
-          <p className="text-sm text-zinc-500">{formatWeekLabel(weekStart)}</p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={refresh} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-          <button onClick={goPrev} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <ChevronLeft className="size-4" />
-          </button>
-          <button onClick={goNext} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
-            <ChevronRight className="size-4" />
-          </button>
-        </div>
-      </div>
+      <PageHeader title="Calendar" subtitle={formatWeekLabel(weekStart)}>
+        <button onClick={refresh} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
+        <button onClick={goPrev} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
+          <ChevronLeft className="size-4" />
+        </button>
+        <button onClick={goNext} className="rounded-md border border-zinc-800 p-1.5 text-zinc-400 hover:bg-zinc-800/50 transition-colors">
+          <ChevronRight className="size-4" />
+        </button>
+      </PageHeader>
 
       {/* Always On + Legend row */}
       <div className="flex items-center justify-between gap-4">
