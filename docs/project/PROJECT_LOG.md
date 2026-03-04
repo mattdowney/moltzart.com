@@ -1,5 +1,20 @@
 # Project Log
 
+## 2026-03-03 (session 16)
+
+- Applied 3 pending migrations via Neon MCP: `projects` table (replacing `product_ideas` as primary org unit), `research_artifacts` table, tasks board workflow (`backlog/todo/in_progress/done` + `board_order`).
+- Built research UI: `/admin/research` list page grouped by project with collapsible sections, `/admin/research/[id]` detail page with sticky sidebar TOC (IntersectionObserver active heading tracking), breadcrumbs, and long-scroll markdown body.
+- Created `bookyour.hair` project, linked Moltzart's two ingested research artifacts (Channel Research + GTM Plan, ingested by hawk agent via `/api/ingest/research`).
+- Added `DomainTag` to `tag-badge.tsx` with per-domain colors (product=blue, marketing=amber, ops=cyan, content=pink, strategy=violet). Replaced plain `type-badge` text with colored pills on all research surfaces.
+- Added `AdminBreadcrumb` component using shadcn Breadcrumb primitives — used on research detail page, available for other admin pages.
+- **Decision:** Research detail page uses a two-column CSS grid (`grid-cols-[1fr_14rem]`) for sidebar TOC instead of the single-column admin pattern. Falls back to single column on `< lg` screens. This is the only admin page with a sidebar — justified because research docs are 10-40KB and need navigation.
+- **Decision:** Research list page groups by project, not flat chronological. Unassigned artifacts appear last. Groups sorted by most recent artifact (relies on DB `ORDER BY created_at DESC`).
+- **Learned:** Moltzart's agents (hawk) run on a separate machine (Mac Mini M4 at `/Users/mmm4/`). Files saved there aren't accessible from this repo's machine. Research content must be POSTed via the ingest API or pushed to a shared git repo — local filesystem paths don't cross machines.
+- **Learned:** `MarkdownRenderer` h2 id generation breaks with rich markdown headings (bold, links, code). `String(children)` on React element arrays produces `[object Object]`. Fixed with recursive `extractText()` helper. The `extractHeadings()` utility also needs `stripInlineMarkdown()` so TOC display text and slug generation match.
+- **Watch:** The `extractHeadings` regex (`/^## (.+)$/`) only matches H2 at line start — headings inside code blocks or blockquotes could false-match. Not an issue with current research content but could surface with different markdown.
+- **Next:** Domain tags are working. User mentioned "a couple things" but only stated #1 (domain badge styling) before ending session. Breadcrumb component exists but is only used on the research detail page — could be added to projects detail page and other drill-down pages.
+- **Blocked:** Go-to-market plan file lives on Mac Mini (`~/.openclaw/workspace-marketing/go-to-market-plan.md`) — not in git. Moltzart needs to either ingest it via the API or push it to openclaw-home for access.
+
 ## 2026-02-23 (session 15)
 
 - Built file-based blog: `gray-matter` + `src/lib/blog.ts`, `/blog/[slug]` static route with `MarkdownRenderer`, homepage "From my blog" section wired to real posts (date above title, no arrow icon).

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, FileSearch } from "lucide-react";
+import { DomainTag } from "@/components/admin/tag-badge";
 import { fetchResearchArtifactsDb, fetchProjectsDb, type DbResearchArtifact, type DbProject } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -108,7 +109,7 @@ export default async function AdminResearchPage() {
                         <p className="type-body-sm font-medium text-zinc-200 group-hover:text-zinc-100 truncate">
                           {artifact.title}
                         </p>
-                        <span className="type-badge text-zinc-500">{artifact.domain}</span>
+                        <DomainTag domain={artifact.domain} />
                       </div>
                       {artifact.summary && (
                         <p className="type-body-sm text-zinc-500 mt-1 line-clamp-1">{artifact.summary}</p>

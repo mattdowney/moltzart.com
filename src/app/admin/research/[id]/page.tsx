@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, FileSearch } from "lucide-react";
+import { DomainTag } from "@/components/admin/tag-badge";
 import { fetchProjectById, fetchResearchArtifactById } from "@/lib/db";
 import { Panel } from "@/components/admin/panel";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
@@ -61,7 +62,7 @@ export default async function AdminResearchDetailPage({ params }: Props) {
 
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="type-badge text-zinc-500">{artifact.domain}</span>
+            <DomainTag domain={artifact.domain} />
             {linkedProject && (
               <Link
                 href={`/admin/projects/${linkedProject.project.slug}`}

@@ -58,3 +58,20 @@ export function PillarTag({ pillar }: { pillar: string }) {
     </span>
   );
 }
+
+export const domainColors: Record<string, string> = {
+  product: "bg-blue-500/20 text-blue-400",
+  marketing: "bg-amber-500/20 text-amber-400",
+  ops: "bg-cyan-500/20 text-cyan-400",
+  content: "bg-pink-500/20 text-pink-400",
+  strategy: "bg-violet-500/20 text-violet-400",
+};
+
+export function DomainTag({ domain }: { domain: string }) {
+  const colors = domainColors[domain] || "bg-zinc-700/40 text-zinc-400";
+  return (
+    <span className={`${tagBase} ${colors}`}>
+      {domain.toUpperCase()}
+    </span>
+  );
+}
