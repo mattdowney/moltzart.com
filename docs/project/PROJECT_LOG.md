@@ -1,5 +1,23 @@
 # Project Log
 
+## 2026-03-05 (session 21)
+
+- Rebuilt styleguide from scratch: left sidebar nav with icons + 8 separate route pages (palette, typography, buttons, form-elements, badges, cards, spacing, motion). Modeled after mattdowney.com/styleguide layout.
+- Palette page restructured into Core Tokens (6 swatches) and 9-Step Color Tokens (100-900 scale table) instead of the old backgrounds/text-hierarchy/status-colors layout.
+- Type scale toned down for tool UI: removed `type-display` and `type-lead`, rebased headings to h1=text-xl, h2=text-lg, h3=text-base. Entire heading range is now 16-24px.
+- Button component (`button.tsx`) sizes reworked: old scale was inverted (default h-12 was tallest, lg h-10 shorter). New scale: xs=28px, sm=32px, default=36px, lg=40px. Default SVG icon size 14px, gap 6px.
+- Added 960px max-width container (`max-w-[960px] mx-auto`) to admin layout for all pages.
+- Added 1px section dividers (`divide-zinc-700/50`) between all styleguide sections.
+- Standardized all mono token callouts to `text-2xs font-mono text-teal-400` — removed inconsistent amber-300 usage.
+- Added Dividers section to Cards page documenting section divider, subtle divider, and divide utility patterns.
+- **Decision:** Styleguide section headings use `type-body font-medium text-zinc-100` — not type-label or any heading class. This keeps them subordinate to the page title in the sidebar.
+- **Decision:** Mono token/variable names in the styleguide use `text-2xs font-mono` (two steps down from `type-code` which is text-sm). Prevents code callouts from visually competing with content.
+- **Decision:** Button size scale must be monotonically increasing (xs < sm < default < lg). Previous shadcn default had default as the tallest button — this was wrong for a tool UI.
+- **Learned:** The original shadcn button sizes are designed for marketing sites (h-12 default). For admin/tool UI, the whole scale needs to compress. 28-40px range covers all needs.
+- **Watch:** `type-display` and `type-lead` CSS classes are deleted from globals.css. Any future code referencing them will silently get no styles applied. The blog post title uses `type-h1` which is now text-xl (was text-3xl).
+- **Watch:** The 960px max-width is on the admin layout `<main>` tag, affecting every admin page. If any page needs to go wider, it'll need to override this.
+- **Next:** Buttons styleguide page is solid. Other pages (form-elements, badges, cards, spacing, motion) could use the same level of polish — form-elements is thinnest (no selects, checkboxes, toggles). Commit and push all changes.
+
 ## 2026-03-05 (session 20)
 
 - Comprehensive styleguide overhaul: 5-page reference at `/admin/styleguide` (overview, foundations, components, patterns, motion) with interactive demos, live component showcases, and Framer Motion presets. Deleted old `/styleguide` route.

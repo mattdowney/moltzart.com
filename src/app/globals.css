@@ -165,24 +165,16 @@ body {
 }
 
 @layer components {
-  .type-display {
-    @apply text-4xl font-semibold tracking-tight;
-  }
-
   .type-h1 {
-    @apply text-3xl font-medium tracking-tight;
-  }
-
-  .type-h2 {
-    @apply text-2xl font-medium tracking-tight;
-  }
-
-  .type-h3 {
     @apply text-xl font-medium tracking-tight;
   }
 
-  .type-lead {
-    @apply text-lg leading-relaxed;
+  .type-h2 {
+    @apply text-lg font-medium tracking-tight;
+  }
+
+  .type-h3 {
+    @apply text-base font-medium tracking-tight;
   }
 
   .type-body {
@@ -208,7 +200,7 @@ body {
   .doc-markdown {
     @apply prose prose-invert prose-zinc max-w-none;
     @apply prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-zinc-100;
-    @apply prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl;
+    @apply prose-h1:text-xl prose-h2:text-lg prose-h3:text-base;
     @apply prose-p:text-sm prose-p:text-zinc-300 prose-p:leading-relaxed;
     @apply prose-li:text-sm prose-li:text-zinc-300 prose-li:leading-relaxed;
     @apply prose-strong:text-zinc-100;
@@ -242,7 +234,7 @@ body {
 
   .doc-markdown-compact {
     @apply prose-sm prose-p:my-2 prose-li:my-0 prose-headings:mt-4 prose-headings:mb-2;
-    @apply prose-p:text-sm prose-li:text-sm prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg;
+    @apply prose-p:text-sm prose-li:text-sm prose-h1:text-lg prose-h2:text-base prose-h3:text-sm;
   }
 
   .doc-markdown-subtle {
