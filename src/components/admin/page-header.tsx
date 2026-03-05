@@ -46,7 +46,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, children }: PageHeade
           </Breadcrumb>
         </div>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-6">
         <div>
           <h1 className="type-h3 text-zinc-100">{title}</h1>
           {subtitle && <p className="type-body-sm text-zinc-500">{subtitle}</p>}

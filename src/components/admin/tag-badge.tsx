@@ -1,3 +1,7 @@
+import { Badge } from "@/components/ui/badge";
+import type { ProjectStatus, ProjectKind } from "@/lib/projects";
+import { STATUS_META } from "@/lib/projects";
+
 export const laneColors: Record<string, { tag: string; bg: string }> = {
   HN: { tag: "bg-orange-500/20 text-orange-400", bg: "bg-orange-500/5" },
   Design: { tag: "bg-pink-500/20 text-pink-400", bg: "bg-pink-500/5" },
@@ -30,61 +34,36 @@ export const pillarColors: Record<string, string> = {
   "WORK + MINDSET": "bg-amber-500/20 text-amber-400",
 };
 
-const tagBase = "inline-flex items-center px-2 py-1 rounded type-badge shrink-0";
-
 export function LaneTag({ lane }: { lane: string }) {
-  const colors = laneColors[lane]?.tag || "bg-zinc-700/40 text-zinc-400";
-  return (
-    <span className={`${tagBase} ${colors}`}>
-      {lane}
-    </span>
-  );
+  return <Badge className={laneColors[lane]?.tag}>{lane}</Badge>;
 }
 
 export function SourceTag({ source }: { source: string }) {
-  const colors = sourceColors[source] || "bg-zinc-700/40 text-zinc-400";
-  return (
-    <span className={`${tagBase} ${colors}`}>
-      {source}
-    </span>
-  );
+  return <Badge className={sourceColors[source]}>{source}</Badge>;
 }
 
 export function PillarTag({ pillar }: { pillar: string }) {
-  const colors = pillarColors[pillar] || "bg-zinc-700/40 text-zinc-400";
-  return (
-    <span className={`${tagBase} ${colors}`}>
-      {pillar}
-    </span>
-  );
+  return <Badge className={pillarColors[pillar]}>{pillar}</Badge>;
 }
-
-import type { ProjectStatus, ProjectKind } from "@/lib/projects";
-import { STATUS_META } from "@/lib/projects";
 
 export function StatusTag({ status }: { status: ProjectStatus }) {
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   return (
-    <span className={`${tagBase} ${meta.bg} ${meta.tone} gap-1`}>
-      <Icon size={10} />
+    <Badge className={`${meta.bg} ${meta.tone}`}>
+      <Icon />
       {meta.label}
-    </span>
+    </Badge>
   );
 }
 
 const kindColors: Record<ProjectKind, string> = {
   product: "bg-blue-500/20 text-blue-400",
-  general: "bg-zinc-700/40 text-zinc-400",
+  general: "",
 };
 
 export function KindTag({ kind }: { kind: ProjectKind }) {
-  const colors = kindColors[kind];
-  return (
-    <span className={`${tagBase} ${colors}`}>
-      {kind}
-    </span>
-  );
+  return <Badge className={kindColors[kind]}>{kind}</Badge>;
 }
 
 export const domainColors: Record<string, string> = {
@@ -96,10 +75,5 @@ export const domainColors: Record<string, string> = {
 };
 
 export function DomainTag({ domain }: { domain: string }) {
-  const colors = domainColors[domain] || "bg-zinc-700/40 text-zinc-400";
-  return (
-    <span className={`${tagBase} ${colors}`}>
-      {domain.toUpperCase()}
-    </span>
-  );
+  return <Badge className={domainColors[domain]}>{domain.toUpperCase()}</Badge>;
 }

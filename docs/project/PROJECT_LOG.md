@@ -1,5 +1,22 @@
 # Project Log
 
+## 2026-03-05 (session 22)
+
+- Unified badge system: rewrote `badge.tsx` with 3 variants (`default`, `outline`, `status`) and 2 shapes (`default`, `pill`). Refactored `tag-badge.tsx` wrappers (LaneTag, SourceTag, etc.) to compose on Badge instead of raw spans with a duplicated `tagBase` string.
+- Overhauled styleguide badges page: structured as Variants → Shapes → With Icons → Status Colors → Domain Wrappers → StatusDot, with reference tables and descriptions.
+- Overhauled styleguide cards page: added Container Hierarchy reference table (Panel/Card/Table with nesting rules), interactive vs static table examples with StatusDot + hover rows, column type reference, do/don't rules section. Removed redundant Border Patterns section.
+- All reference tables now use consistent styling: `bg-zinc-900/60` header bg, `text-xs` headers, `text-xs` body, `rounded-lg` shell.
+- Added `border-b border-zinc-800 pb-6` divider to PageHeader title row, separating it from content below.
+- Styleguide sidebar "Navigation" label downsized from `type-label` (`text-xs`) to raw `text-2xs uppercase tracking-[0.08em] font-medium` to sit subordinate to nav items.
+- **Decision:** One Badge component covers all use cases (category tags, status indicators, count pills, metadata labels). Domain wrappers (LaneTag, SourceTag, etc.) are convenience components that compose on Badge with preset color maps — not a separate system.
+- **Decision:** Badge `status` variant provides `border` only and expects a color triad via className (`bg-{c}-400/10 text-{c}-400 border-{c}-400/20`). Colors are data-driven, not enumerated in CVA.
+- **Decision:** Tables use `bg-zinc-900/60` on header rows for visual anchoring. Dates/numbers right-aligned with `font-mono`. This is now the canonical table pattern.
+- **Learned:** `type-badge` is a typography class for badge text styling (tiny mono uppercase), NOT a semantic substitute for labels. Using it on section labels because it's "smaller" is wrong — it changes the semantic role. If `type-label` is too large, create a `type-label-sm` or use raw utilities.
+- **Watch:** PageHeader now has `pb-6 border-b border-zinc-800` on the title row. This affects every admin page. Pages with breadcrumbs already had their own `mb-8 pb-4 border-b` on the breadcrumb row — so pages with breadcrumbs now have two horizontal rules (breadcrumb divider + title divider).
+- **Watch:** The styleguide nav label uses raw utilities (`text-2xs uppercase tracking-[0.08em] font-medium`) instead of a `type-*` class. Should add `type-label-sm` to the type system if this pattern recurs.
+- **Watch:** The old shadcn Badge variants (`secondary`, `destructive`, `ghost`, `link`) are deleted. Any code outside the styleguide still importing Badge with those variants will get no matching styles. The app-wide sweep hasn't been done yet — inline badge spans in tasks-view, drafts-view, calendar-view, etc. still use raw `<span>` elements.
+- **Next:** App-wide badge/card sweep deferred until all styleguide pages are done. Remaining styleguide pages needing polish: form-elements (thinnest — no selects, checkboxes, toggles), spacing, motion. Also need to decide on `type-label-sm` addition. Commit and push all changes.
+
 ## 2026-03-05 (session 21)
 
 - Rebuilt styleguide from scratch: left sidebar nav with icons + 8 separate route pages (palette, typography, buttons, form-elements, badges, cards, spacing, motion). Modeled after mattdowney.com/styleguide layout.

@@ -36,7 +36,7 @@ export default function StyleguideLayout({ children }: { children: React.ReactNo
       <div className="flex gap-10 mt-8">
         {/* Left sidebar nav */}
         <nav className="sticky top-6 self-start w-48 shrink-0 hidden md:block">
-          <p className="type-label text-zinc-500 mb-3 px-3">Navigation</p>
+          <p className="text-2xs uppercase tracking-[0.08em] font-medium text-zinc-500 mb-3 px-3">Navigation</p>
           <ul className="space-y-0.5">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
