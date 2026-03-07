@@ -18,14 +18,13 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { status, detail, priority, effort, due_date, blocked_by, board_order } = body;
+  const { status, detail, effort, due_date, blocked_by, board_order } = body;
   const normalizedStatus = status === undefined ? undefined : normalizeTaskStatusInput(status);
   const normalizedBoardOrder = board_order === undefined ? undefined : Number(board_order);
 
   const updated = await updateTask(id, {
     status: normalizedStatus,
     detail,
-    priority,
     effort,
     due_date,
     blocked_by,

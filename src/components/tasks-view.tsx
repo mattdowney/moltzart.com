@@ -5,11 +5,15 @@ import type { DbTask } from "@/lib/db";
 import {
   Calendar,
   CircleAlert,
+  FolderOpen,
   RefreshCw,
   GripVertical,
+  CheckCircle2,
+  PlayCircle,
+  ListTodo,
 } from "lucide-react";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
-import { PageHeader } from "@/components/admin/page-header";
 import {
   Sheet,
   SheetContent,
@@ -17,15 +21,47 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   TASK_BOARD_STATUSES,
   TASK_STATUS_LABELS,
   type TaskStatus,
   normalizeTaskStatusInput,
 } from "@/lib/task-workflow";
+import { EmptyState } from "@/components/admin/empty-state";
+import { cn } from "@/lib/utils";
+import { formatShortDate, formatShortDateTime } from "@/lib/date-format";
 
 type TaskColumns = Record<TaskStatus, DbTask[]>;
 type DragOverState = { status: TaskStatus; index: number } | null;
+const VISIBLE_TASK_BOARD_STATUSES: TaskStatus[] = ["todo", "in_progress", "done"];
+
+const TASK_STATUS_META: Record<
+  TaskStatus,
+  { icon: typeof FolderOpen; description: string; tone: string }
+> = {
+  backlog: {
+    icon: FolderOpen,
+    description: "Captured work that has not earned a scheduling decision yet.",
+    tone: "text-zinc-400",
+  },
+  todo: {
+    icon: ListTodo,
+    description: "Ready next. Clear candidates for active execution.",
+    tone: "text-zinc-200",
+  },
+  in_progress: {
+    icon: PlayCircle,
+    description: "Work currently consuming attention and time.",
+    tone: "text-amber-400",
+  },
+  done: {
+    icon: CheckCircle2,
+    description: "Finished work kept visible long enough to close loops cleanly.",
+    tone: "text-emerald-400",
+  },
+};
 
 function getBoardOrder(task: DbTask, fallback: number): number {
   const n = Number(task.board_order);
@@ -54,6 +90,21 @@ function compareTasks(a: DbTask, b: DbTask): number {
   return getCreatedAtComparable(a).localeCompare(getCreatedAtComparable(b));
 }
 
+function TaskStatusMeta({
+  status,
+}: {
+  status: TaskStatus;
+}) {
+  const Icon = TASK_STATUS_META[status].icon;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 type-body-sm text-zinc-400">
+      <Icon size={12} className={cn("shrink-0", TASK_STATUS_META[status].tone)} />
+      <span>{TASK_STATUS_LABELS[status]}</span>
+    </span>
+  );
+}
+
 function buildColumns(tasks: DbTask[]): TaskColumns {
   const columns: TaskColumns = {
     backlog: [],
@@ -63,7 +114,8 @@ function buildColumns(tasks: DbTask[]): TaskColumns {
   };
 
   for (const task of tasks) {
-    const status = normalizeTaskStatusInput(task.status);
+    const normalizedStatus = normalizeTaskStatusInput(task.status);
+    const status = normalizedStatus === "backlog" ? "todo" : normalizedStatus;
     columns[status].push({ ...task, status });
   }
 
@@ -182,16 +234,16 @@ function TaskCard({
           {showMeta && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {task.due_date && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded type-badge border border-zinc-800/80 bg-zinc-900/60 text-zinc-400">
+                <Badge variant="outline" className="gap-1 border-zinc-800/80 bg-zinc-900/60 text-zinc-400">
                   <Calendar size={10} />
-                  {task.due_date}
-                </span>
+                  {formatShortDate(task.due_date)}
+                </Badge>
               )}
               {task.blocked_by && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded type-badge border border-orange-400/20 bg-orange-400/10 text-orange-300/80">
+                <Badge variant="status" className="gap-1 border-orange-400/20 bg-orange-400/10 text-orange-300/80">
                   <CircleAlert size={10} />
-                  blocked
-                </span>
+                  waiting
+                </Badge>
               )}
             </div>
           )}
@@ -233,13 +285,6 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
     () => (detailTaskId ? data.find((task) => task.id === detailTaskId) ?? null : null),
     [data, detailTaskId]
   );
-  const stats = useMemo(() => ({
-    backlog: columns.backlog.length,
-    todo: columns.todo.length,
-    inProgress: columns.in_progress.length,
-    done: columns.done.length,
-  }), [columns]);
-
   async function persistMove(task: DbTask) {
     const res = await fetch(`/api/admin/task/${task.id}`, {
       method: "PATCH",
@@ -301,29 +346,10 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Tasks">
-        <span className="flex items-center gap-2 type-body-sm">
-          <span className="text-zinc-300">{stats.backlog}</span>
-          <span className="text-zinc-600">backlog</span>
-          <span className="text-zinc-300">{stats.todo}</span>
-          <span className="text-zinc-600">todo</span>
-          <span className="text-amber-400">{stats.inProgress}</span>
-          <span className="text-zinc-600">in progress</span>
-          <span className="text-emerald-400">{stats.done}</span>
-          <span className="text-zinc-600">done</span>
-        </span>
-        {savingTaskId && (
-          <span className="type-body-sm text-zinc-600">saving...</span>
-        )}
-        <button
-          onClick={refresh}
-          disabled={loading}
-          className="text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
-          title="Refresh"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-        </button>
-      </PageHeader>
+      <AdminPageIntro
+        title="Tasks"
+        subtitle="Move work across todo, active execution, and completed follow-through."
+      />
 
       <Panel className="flex flex-col h-[calc(100svh-10rem)] overflow-hidden">
 
@@ -334,21 +360,32 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
       )}
 
       {data.length === 0 ? (
-        <p className="type-body-sm text-zinc-500 py-8 text-center">No tasks yet.</p>
+        <div className="flex-1 flex items-center justify-center py-8">
+          <EmptyState icon={Calendar} message="No tasks yet." />
+        </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-x-auto p-3">
-          <div className="min-w-[1080px] h-full grid grid-cols-4 gap-3">
-            {TASK_BOARD_STATUSES.map((status) => {
+          <div className="grid h-full min-w-[840px] grid-cols-3 gap-3">
+            {VISIBLE_TASK_BOARD_STATUSES.map((status) => {
               const tasks = columns[status];
+              const Icon = TASK_STATUS_META[status].icon;
               return (
                 <div
                   key={status}
-                  className="flex h-full min-h-0 flex-col rounded-lg border border-zinc-800/40 bg-zinc-950/40"
+                  className="flex h-full min-h-0 flex-col rounded-xl border border-zinc-800/50 bg-zinc-950/50"
                   onDragOver={(e) => e.preventDefault()}
                 >
-                  <div className="px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between">
-                    <span className="type-body-sm font-medium text-zinc-200">{TASK_STATUS_LABELS[status]}</span>
-                    <span className="type-body-sm text-zinc-600">{tasks.length}</span>
+                  <div className="border-b border-zinc-800/40 px-3 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Icon size={15} className={cn("shrink-0", TASK_STATUS_META[status].tone)} />
+                        <span className="type-body-sm font-medium text-zinc-100">{TASK_STATUS_LABELS[status]}</span>
+                      </div>
+                      <span className="type-body-sm text-zinc-500">{tasks.length}</span>
+                    </div>
+                    <p className="mt-2 type-body-sm text-zinc-500">
+                      {TASK_STATUS_META[status].description}
+                    </p>
                   </div>
                   <div className="p-2 space-y-1 min-h-0 overflow-y-auto">
                     {tasks.map((task, index) => (
@@ -392,38 +429,70 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
         </div>
       )}
       <Sheet open={Boolean(detailTask)} onOpenChange={(open) => !open && setDetailTaskId(null)}>
-        <SheetContent side="right" className="bg-zinc-950 border-zinc-800 text-zinc-100 w-full sm:max-w-md">
-          <SheetHeader className="border-b border-zinc-800/60">
-            <SheetTitle className="text-zinc-100 type-h3">
+        <SheetContent side="right" className="w-full border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-lg">
+          <SheetHeader className="border-b border-zinc-800/60 px-4 py-4">
+            <SheetTitle className="text-lg font-medium leading-tight text-zinc-100">
               {detailTask?.title ?? "Task"}
             </SheetTitle>
-            <SheetDescription className="text-zinc-500 type-body-sm">
-              {detailTask ? TASK_STATUS_LABELS[normalizeTaskStatusInput(detailTask.status)] : ""}
+            <SheetDescription className="mt-1">
+              {detailTask ? (
+                <>
+                  <TaskStatusMeta status={normalizeTaskStatusInput(detailTask.status)} />
+                  {detailTask.due_date && (
+                    <>
+                      <span className="mx-2 text-zinc-600">&bull;</span>
+                      <span className="inline-flex items-center gap-1.5 type-body-sm text-zinc-400">
+                        <Calendar size={10} />
+                        {formatShortDate(detailTask.due_date)}
+                      </span>
+                    </>
+                  )}
+                  {detailTask.blocked_by && (
+                    <>
+                      <span className="mx-2 text-zinc-600">&bull;</span>
+                      <span className="inline-flex items-center gap-1.5 type-body-sm text-orange-300/80">
+                        <CircleAlert size={10} />
+                        Waiting
+                      </span>
+                    </>
+                  )}
+                </>
+              ) : null}
             </SheetDescription>
           </SheetHeader>
           {detailTask && (
-            <div className="px-4 py-4 space-y-4 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded border border-zinc-800/70 bg-zinc-900/40 px-3 py-2">
-                  <p className="type-badge text-zinc-500">Due</p>
-                  <p className="type-body-sm text-zinc-200 mt-1">{detailTask.due_date || "—"}</p>
+            <div className="space-y-5 overflow-y-auto px-4 py-4">
+              {detailTask.blocked_by && (
+                <div className="rounded-lg border border-orange-400/20 bg-orange-400/8 px-4 py-3">
+                  <p className="text-2xs font-medium uppercase tracking-[0.08em] text-orange-300/80">Waiting On</p>
+                  <p className="mt-2 type-body-sm text-zinc-200">{detailTask.blocked_by}</p>
                 </div>
-                <div className="rounded border border-zinc-800/70 bg-zinc-900/40 px-3 py-2">
-                  <p className="type-badge text-zinc-500">Blocked By</p>
-                  <p className="type-body-sm text-zinc-200 mt-1">{detailTask.blocked_by || "—"}</p>
-                </div>
-              </div>
-              <div className="rounded border border-zinc-800/70 bg-zinc-900/30 px-3 py-3">
-                <p className="type-badge text-zinc-500">Detail</p>
-                <p className="type-body-sm text-zinc-300 mt-2 whitespace-pre-wrap">
-                  {detailTask.detail || "No detail added."}
+              )}
+
+              <div className="rounded-lg border border-zinc-800/70 bg-zinc-900/30 px-4 py-4">
+                <p className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500">Notes</p>
+                <p className="mt-3 whitespace-pre-wrap type-body-sm text-zinc-300">
+                  {detailTask.detail || "No notes added yet."}
                 </p>
+              </div>
+
+              <div className="space-y-3 border-t border-zinc-800/50 pt-4">
+                <TaskMetaRow label="Updated" value={formatShortDateTime(detailTask.updated_at)} />
               </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
     </Panel>
+    </div>
+  );
+}
+
+function TaskMetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <p className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500">{label}</p>
+      <p className="type-body-sm text-right text-zinc-300">{value}</p>
     </div>
   );
 }

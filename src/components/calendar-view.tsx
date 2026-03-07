@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import type { DbCronJob, DbJobRun } from "@/lib/db";
-import { PageHeader } from "@/components/admin/page-header";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
+import { Badge } from "@/components/ui/badge";
+import { getScheduledRunStatus, isHighFrequencyCron, parseCronField, cronMatchesDay, type CronRunStatus } from "@/lib/cron-health";
+import type { OpenClawCronMeta } from "@/lib/openclaw-crons";
 
 // --- Types ---
 
 interface CalendarData {
   crons: DbCronJob[];
   jobRuns: DbJobRun[];
+  meta: OpenClawCronMeta;
 }
 
 interface CalendarViewProps {
@@ -18,25 +22,25 @@ interface CalendarViewProps {
   initialStart: string;
 }
 
-type RunStatus = "success" | "error" | "missed" | "upcoming" | "running";
-
 interface DayEvent {
   name: string;
   jobId: string;
+  agentId: string | null;
   time: string;
   sortKey: string;
-  status: RunStatus;
+  status: CronRunStatus;
   summary?: string;
 }
 
 // --- Status indicator styles ---
 
-const STATUS_INDICATOR: Record<RunStatus, { dot: string; border: string }> = {
+const STATUS_INDICATOR: Record<CronRunStatus, { dot: string; border: string }> = {
   success: { dot: "bg-emerald-400", border: "border-emerald-400/20" },
   error: { dot: "bg-red-400", border: "border-red-400/20" },
   missed: { dot: "bg-amber-400", border: "border-amber-400/20" },
   running: { dot: "bg-blue-400 animate-pulse", border: "border-blue-400/20" },
   upcoming: { dot: "bg-zinc-600", border: "border-zinc-800/40" },
+  unknown: { dot: "bg-zinc-500", border: "border-zinc-700/50" },
 };
 
 // --- Date helpers (Monday-start week) ---
@@ -57,45 +61,10 @@ function getWeekDays(startDate: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
 }
 
-function formatWeekLabel(startDate: string): string {
-  const start = new Date(startDate + "T12:00:00");
-  const end = new Date(startDate + "T12:00:00");
-  end.setDate(end.getDate() + 6);
-  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  if (start.getMonth() !== end.getMonth()) {
-    return `${start.toLocaleDateString("en-US", opts)} – ${end.toLocaleDateString("en-US", opts)}, ${start.getFullYear()}`;
-  }
-  return `${start.toLocaleDateString("en-US", { month: "short" })} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`;
-}
-
-// --- Cron field parser (bypasses cron-parser DST bug) ---
-
-function parseCronField(field: string, min: number, max: number): number[] {
-  if (field === "*") return Array.from({ length: max - min + 1 }, (_, i) => min + i);
-  if (field.startsWith("*/")) {
-    const step = parseInt(field.slice(2));
-    const result: number[] = [];
-    for (let i = min; i <= max; i += step) result.push(i);
-    return result;
-  }
-  if (field.includes(",")) return field.split(",").map(Number);
-  if (field.includes("-")) {
-    const [lo, hi] = field.split("-").map(Number);
-    return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-  }
-  return [parseInt(field)];
-}
-
-function cronMatchesDay(dowField: string, jsDay: number): boolean {
-  // JS: 0=Sun, cron: 0=Sun (or 7=Sun)
-  const dows = parseCronField(dowField, 0, 6);
-  return dows.includes(jsDay) || (jsDay === 0 && dows.includes(7));
-}
-
 function formatHM(h: number, m: number): string {
   const ampm = h >= 12 ? "PM" : "AM";
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return m === 0 ? `${h12}:00 ${ampm}` : `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+  return m === 0 ? `${h12}:00${ampm}` : `${h12}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
 function sortKeyHM(h: number, m: number): string {
@@ -130,7 +99,59 @@ function expandCron(expr: string, weekDays: string[]): CronRun[] {
 
 interface AlwaysRunningJob {
   name: string;
+  agentId: string | null;
   frequency: string;
+  displayName: string;
+}
+
+const AGENT_META = {
+  moltzart: {
+    label: "Moltzart",
+    short: "MO",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  scout: {
+    label: "Scout",
+    short: "SC",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  pica: {
+    label: "Pica",
+    short: "PI",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  hawk: {
+    label: "Hawk",
+    short: "HK",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  sigmund: {
+    label: "Sigmund",
+    short: "SG",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  system: {
+    label: "Unassigned",
+    short: "UN",
+    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
+  },
+  unknown: {
+    label: "Unknown",
+    short: "??",
+    badge: "border-zinc-700/60 bg-zinc-800/40 text-zinc-400",
+  },
+} as const;
+
+function getAgentMeta(agentId: string | null | undefined) {
+  if (!agentId) return AGENT_META.system;
+  return AGENT_META[agentId as keyof typeof AGENT_META] ?? AGENT_META.unknown;
+}
+
+function getAlwaysOnDisplayName(name: string, frequency: string) {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("heartbeat")) return "HEARTBEAT (*/15)";
+  if (normalized.includes("session state")) return "SESSION STATE (*/60)";
+  return `${name.toUpperCase()} (${frequency.toUpperCase()})`;
 }
 
 function categorizeCrons(
@@ -155,13 +176,19 @@ function categorizeCrons(
 
   for (const job of crons) {
     if (!job.enabled) continue;
+    if (!job.schedule_expr || job.schedule_expr.split(" ").length < 5) continue;
 
     const weekRuns = expandCron(job.schedule_expr, weekDays);
 
-    if (weekRuns.length > 100) {
+    if (isHighFrequencyCron(job.schedule_expr, weekDays)) {
       const perDay = Math.round(weekRuns.length / 7);
       const freq = perDay >= 24 ? `Every ${Math.round((24 * 60) / perDay)} min` : `${perDay}x daily`;
-      alwaysRunning.push({ name: job.name, frequency: freq });
+      alwaysRunning.push({
+        name: job.name,
+        agentId: job.agent_id,
+        frequency: freq,
+        displayName: getAlwaysOnDisplayName(job.name, freq),
+      });
       continue;
     }
 
@@ -170,28 +197,19 @@ function categorizeCrons(
 
       const matchKey = `${job.id}:${run.dateKey}`;
       const matchingRuns = runIndex.get(matchKey) || [];
-      let status: RunStatus;
-      let summary: string | undefined;
-
-      const isFuture = run.dateKey > todayStr ||
-        (run.dateKey === todayStr && (run.hour > nowH || (run.hour === nowH && run.minute > nowM)));
-
-      if (isFuture) {
-        status = "upcoming";
-      } else if (matchingRuns.length > 0) {
-        const bestRun = matchingRuns[0];
-        status = bestRun.status as RunStatus;
-        if (status !== "success" && status !== "error" && status !== "running") {
-          status = "success";
-        }
-        summary = bestRun.summary || undefined;
-      } else {
-        status = "missed";
-      }
+      const { status, summary } = getScheduledRunStatus({
+        job,
+        matchingRuns,
+        dateKey: run.dateKey,
+        hour: run.hour,
+        minute: run.minute,
+        now: new Date(`${todayStr}T${String(nowH).padStart(2, "0")}:${String(nowM).padStart(2, "0")}:00`),
+      });
 
       scheduled.get(run.dateKey)!.push({
         name: job.name,
         jobId: job.id,
+        agentId: job.agent_id,
         time: formatHM(run.hour, run.minute),
         sortKey: sortKeyHM(run.hour, run.minute),
         status,
@@ -204,7 +222,14 @@ function categorizeCrons(
     events.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }
 
-  return { alwaysRunning, scheduled };
+  const seen = new Set<string>();
+  const dedupedAlwaysRunning = alwaysRunning.filter((job) => {
+    if (seen.has(job.name)) return false;
+    seen.add(job.name);
+    return true;
+  });
+
+  return { alwaysRunning: dedupedAlwaysRunning, scheduled };
 }
 
 // --- Component ---
@@ -213,6 +238,10 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
   const [data, setData] = useState<CalendarData>(initialData);
   const [weekStart, setWeekStart] = useState(initialStart);
   const [loading, setLoading] = useState(false);
+  const [panelHeight, setPanelHeight] = useState<number | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const headerRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const contentRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
   const todayKey = fmtDate(new Date());
@@ -237,62 +266,143 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
     () => categorizeCrons(data.crons, data.jobRuns, weekDays),
     [data.crons, data.jobRuns, weekDays]
   );
+
+  useLayoutEffect(() => {
+    let frame1 = 0;
+    let frame2 = 0;
+
+    function updatePanelHeight() {
+      const panelTop = panelRef.current?.getBoundingClientRect().top ?? 0;
+      const viewportCap = Math.max(window.innerHeight - panelTop - 24, 320);
+      const tallestColumn = weekDays.reduce((max, _, idx) => {
+        const header = headerRefs.current[idx];
+        const content = contentRefs.current[idx];
+        if (!header || !content) return max;
+        return Math.max(max, header.offsetHeight + content.offsetHeight);
+      }, 0);
+
+      if (!tallestColumn) return;
+      setPanelHeight(Math.min(tallestColumn, viewportCap));
+    }
+
+    function measureAfterLayout() {
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+      frame1 = requestAnimationFrame(() => {
+        frame2 = requestAnimationFrame(updatePanelHeight);
+      });
+    }
+
+    measureAfterLayout();
+
+    window.addEventListener("resize", measureAfterLayout);
+    return () => {
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+      window.removeEventListener("resize", measureAfterLayout);
+    };
+  }, [scheduled, alwaysRunning.length, weekDays]);
+
   const iconButtonClass =
     "inline-flex size-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800/40 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Calendar" subtitle={formatWeekLabel(weekStart)}>
-        <button
-          onClick={refresh}
-          disabled={loading}
-          className={iconButtonClass}
-        >
-          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
-        <button
-          onClick={goPrev}
-          className={iconButtonClass}
-        >
-          <ChevronLeft className="size-4" />
-        </button>
-        <button
-          onClick={goNext}
-          className={iconButtonClass}
-        >
-          <ChevronRight className="size-4" />
-        </button>
-      </PageHeader>
+      <AdminPageIntro
+        title="Calendar"
+        actions={
+          <>
+            <button
+              onClick={refresh}
+              disabled={loading}
+              className={iconButtonClass}
+            >
+              <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <button
+              onClick={goPrev}
+              className={iconButtonClass}
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <button
+              onClick={goNext}
+              className={iconButtonClass}
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </>
+        }
+      />
 
-      {/* Always On + Legend row */}
-      <div className="flex items-center justify-between gap-4">
-        {alwaysRunning.length > 0 && (
-          <div className="flex items-center gap-3">
-            <span className="type-badge text-zinc-600 shrink-0">Always On</span>
-            <div className="flex flex-wrap gap-2">
-              {alwaysRunning.map((job) => (
-                <span
-                  key={job.name}
-                  className="inline-flex items-center rounded-full border border-zinc-800 px-2 py-1 type-badge text-zinc-500 bg-zinc-900/50"
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-start">
+        <div className="space-y-2 min-w-0">
+          <div className="type-badge text-zinc-600">Agents</div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {(["moltzart", "scout", "pica", "hawk", "sigmund"] as const).map((agentKey) => {
+              const agent = AGENT_META[agentKey];
+              return (
+                <Badge
+                  key={agentKey}
+                  variant="status"
+                  shape="pill"
+                  className={`shrink-0 ${agent.badge}`}
                 >
-                  {job.name} · {job.frequency}
-                </span>
-              ))}
-            </div>
+                  {agent.short}: {agent.label}
+                </Badge>
+              );
+            })}
           </div>
-        )}
-        <div className="ml-auto flex shrink-0 items-center gap-4 type-body-sm text-zinc-500">
-          <span className="flex items-center gap-2"><span className="inline-block size-2 rounded-full bg-emerald-400" /> Ran</span>
-          <span className="flex items-center gap-2"><span className="inline-block size-2 rounded-full bg-red-400" /> Error</span>
-          <span className="flex items-center gap-2"><span className="inline-block size-2 rounded-full bg-amber-400" /> Missed</span>
-          <span className="flex items-center gap-2"><span className="inline-block size-2 rounded-full bg-zinc-600" /> Upcoming</span>
+        </div>
+
+        <div className="space-y-2 min-w-0">
+          <div className="type-badge text-zinc-600">Always On</div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {alwaysRunning.map((job) => (
+              <Badge
+                key={job.name}
+                variant="outline"
+                shape="pill"
+                className="shrink-0 bg-zinc-900/50 text-zinc-500"
+              >
+                <span className="text-zinc-300">{getAgentMeta(job.agentId).short}:</span>
+                {job.displayName}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2 min-w-0 xl:justify-self-end">
+          <div className="type-badge text-zinc-600">Status</div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <Badge variant="outline" shape="pill" className="shrink-0 bg-zinc-900/50 text-zinc-500">
+              <span className="inline-block size-1.5 rounded-full bg-emerald-400" />
+              Ran
+            </Badge>
+            <Badge variant="outline" shape="pill" className="shrink-0 bg-zinc-900/50 text-zinc-500">
+              <span className="inline-block size-1.5 rounded-full bg-red-400" />
+              Error
+            </Badge>
+            <Badge variant="outline" shape="pill" className="shrink-0 bg-zinc-900/50 text-zinc-500">
+              <span className="inline-block size-1.5 rounded-full bg-amber-400" />
+              Missed
+            </Badge>
+            <Badge variant="outline" shape="pill" className="shrink-0 bg-zinc-900/50 text-zinc-500">
+              <span className="inline-block size-1.5 rounded-full bg-zinc-600" />
+              Upcoming
+            </Badge>
+          </div>
         </div>
       </div>
 
       {/* Weekly columns */}
-      <Panel className={`flex flex-col h-[calc(100svh-10rem)] overflow-hidden ${loading ? "opacity-50 pointer-events-none" : ""}`}>
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="grid grid-cols-7 gap-px bg-zinc-800/30 h-full">
+      <div ref={panelRef}>
+        <Panel
+          className={`flex flex-col overflow-hidden ${loading ? "pointer-events-none opacity-50" : ""}`}
+          style={{ height: panelHeight ? `${panelHeight}px` : "calc(100svh - 10rem)" }}
+        >
+          <div className="min-h-0 flex-1 overflow-x-auto">
+            <div className="grid h-full min-w-[980px] grid-cols-7 gap-px bg-zinc-800/30">
           {weekDays.map((dateKey, idx) => {
             const d = new Date(dateKey + "T12:00:00");
             const isToday = dateKey === todayKey;
@@ -300,52 +410,72 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
             const events = scheduled.get(dateKey) || [];
 
             return (
-              <div key={dateKey} className={`bg-zinc-950/40 flex flex-col min-h-0 ${isPast ? "opacity-50" : ""}`}>
+              <div
+                key={dateKey}
+                className={`flex h-full min-h-0 flex-col bg-zinc-950/40 ${isPast ? "opacity-50" : ""}`}
+              >
                 {/* Day header */}
-                <div className={`px-3 py-2 border-b border-zinc-800/40 flex items-center justify-between ${isToday ? "bg-zinc-900/50" : ""}`}>
-                  <span className={`text-sm font-semibold ${isToday ? "text-teal-400" : "text-zinc-300"}`}>
+                <div
+                  ref={(node) => {
+                    headerRefs.current[idx] = node;
+                  }}
+                  className={`sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800/50 bg-zinc-900/60 px-4 py-2 backdrop-blur-sm ${isToday ? "shadow-[inset_0_-1px_0_rgba(45,212,191,0.2)]" : ""}`}
+                >
+                  <span className={`type-body-sm font-medium ${isToday ? "text-teal-400" : "text-zinc-200"}`}>
                     {WEEKDAYS[idx]}
                   </span>
-                  <span className={`text-sm ${isToday ? "text-teal-400/70" : "text-zinc-600"}`}>
+                  <span className={`type-body-sm ${isToday ? "text-teal-400/80" : "text-zinc-500"}`}>
                     {d.getDate()}
                   </span>
                 </div>
 
                 {/* Event cards */}
-                <div className="flex-1 p-2 space-y-1 min-h-0 overflow-y-auto">
-                  {events.map((ev, i) => (
-                    <EventCard key={`${ev.jobId}-${ev.sortKey}-${i}`} event={ev} />
-                  ))}
-                  {events.length === 0 && (
-                    <div className="type-badge text-zinc-700 text-center py-4">—</div>
-                  )}
+                <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <div
+                    ref={(node) => {
+                      contentRefs.current[idx] = node;
+                    }}
+                    className="space-y-1 p-2"
+                  >
+                    {events.map((ev, i) => (
+                      <EventCard key={`${ev.jobId}-${ev.sortKey}-${i}`} event={ev} />
+                    ))}
+                    {events.length === 0 && (
+                      <div className="type-badge py-4 text-center text-zinc-700">—</div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
+            </div>
           </div>
-        </div>
-      </Panel>
+        </Panel>
+      </div>
     </div>
   );
 }
 
 function EventCard({ event }: { event: DayEvent }) {
   const si = STATUS_INDICATOR[event.status];
+  const agent = getAgentMeta(event.agentId);
+  const statusDotClass = si.dot.replace(" animate-pulse", "");
 
   return (
     <div
-      className={`rounded-lg bg-zinc-900/30 border p-2 ${si.border}`}
+      className={`rounded-lg border bg-zinc-900/30 px-1.5 py-2 ${si.border}`}
       title={event.summary || undefined}
     >
-      <div className="flex items-center gap-2">
-        <span className={`inline-block size-1.5 rounded-full shrink-0 ${si.dot}`} />
-        <span className="type-body-sm font-medium truncate text-zinc-200">
+      <div className="pl-1">
+        <div className="text-xs font-medium leading-tight text-zinc-200">
           {event.name}
-        </span>
+        </div>
       </div>
-      <div className="type-badge text-zinc-500 mt-1 pl-3">
-        {event.time}
+      <div className="mt-1 flex items-center gap-1.5 pl-1 type-badge text-zinc-500">
+        <span className={`inline-block size-1.5 rounded-full ${statusDotClass}`} />
+        <span>{agent.short}</span>
+        <span>&bull;</span>
+        <span>{event.time}</span>
       </div>
     </div>
   );

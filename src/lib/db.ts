@@ -164,7 +164,6 @@ export interface DbTask {
   title: string;
   detail: string | null;
   status: string;
-  priority: string;
   effort: string | null;
   due_date: string | null;
   blocked_by: string | null;
@@ -189,12 +188,6 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
             ELSE 4
           END,
           board_order ASC NULLS LAST,
-          CASE priority
-            WHEN 'urgent' THEN 0
-            WHEN 'high' THEN 1
-            WHEN 'normal' THEN 2
-            WHEN 'low' THEN 3
-          END,
           due_date NULLS LAST,
           created_at
       `
@@ -207,12 +200,6 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
             WHEN 'in_progress' THEN 2
             WHEN 'done' THEN 3
             ELSE 1
-          END,
-          CASE priority
-            WHEN 'urgent' THEN 0
-            WHEN 'high' THEN 1
-            WHEN 'normal' THEN 2
-            WHEN 'low' THEN 3
           END,
           due_date NULLS LAST,
           created_at
@@ -269,7 +256,7 @@ export async function fetchTasksByStatus(status?: string): Promise<DbTask[]> {
 
 export async function insertTask(
   title: string,
-  opts?: { detail?: string; priority?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string }
+  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string }
 ): Promise<string> {
   const capabilities = await getTaskSchemaCapabilities();
   const status = normalizeTaskStatusInput(opts?.status);
@@ -280,14 +267,14 @@ export async function insertTask(
           : await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status = ${status}`;
         const boardOrder = Number(maxOrderRows[0]?.max_order ?? 0) + 1;
         return sql()`
-          INSERT INTO tasks (title, detail, priority, effort, due_date, blocked_by, status, board_order)
-          VALUES (${title}, ${opts?.detail || null}, ${opts?.priority || 'normal'}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder})
+          INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order)
+          VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder})
           RETURNING id
         `;
       })()
     : await sql()`
-        INSERT INTO tasks (title, detail, priority, effort, due_date, blocked_by, status)
-        VALUES (${title}, ${opts?.detail || null}, ${opts?.priority || 'normal'}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${mapTaskStatusForLegacySchema(status)})
+        INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status)
+        VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${mapTaskStatusForLegacySchema(status)})
         RETURNING id
       `;
   return rows[0].id;
@@ -295,7 +282,7 @@ export async function insertTask(
 
 export async function updateTask(
   id: string,
-  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "priority" | "effort" | "due_date" | "blocked_by" | "board_order">>
+  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "effort" | "due_date" | "blocked_by" | "board_order">>
 ): Promise<boolean> {
   const capabilities = await getTaskSchemaCapabilities();
   const normalizedStatus = fields.status === undefined
@@ -307,7 +294,6 @@ export async function updateTask(
         fields.title,
         fields.detail,
         normalizedStatus,
-        fields.priority,
         fields.effort,
         fields.due_date,
         fields.blocked_by,
@@ -317,7 +303,6 @@ export async function updateTask(
     fields.title,
     fields.detail,
     normalizedStatus,
-    fields.priority,
     fields.effort,
     fields.due_date,
     fields.blocked_by,
@@ -331,7 +316,6 @@ export async function updateTask(
           title = COALESCE(${fields.title ?? null}::text, title),
           detail = COALESCE(${fields.detail ?? null}::text, detail),
           status = COALESCE(${normalizedStatus ?? null}::text, status),
-          priority = COALESCE(${fields.priority ?? null}::text, priority),
           effort = COALESCE(${fields.effort ?? null}::text, effort),
           due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
           blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
@@ -345,7 +329,6 @@ export async function updateTask(
           title = COALESCE(${fields.title ?? null}::text, title),
           detail = COALESCE(${fields.detail ?? null}::text, detail),
           status = COALESCE(${normalizedStatus ? mapTaskStatusForLegacySchema(normalizedStatus) : null}::text, status),
-          priority = COALESCE(${fields.priority ?? null}::text, priority),
           effort = COALESCE(${fields.effort ?? null}::text, effort),
           due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
           blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
@@ -1747,6 +1730,51 @@ export async function upsertCronJobs(
   return upserted;
 }
 
+export async function replaceCronJobsSnapshot(
+  jobs: {
+    id: string;
+    name: string;
+    agent_id?: string;
+    enabled?: boolean;
+    schedule_expr: string;
+    schedule_tz?: string;
+    last_run_at?: string | null;
+    last_status?: string | null;
+    last_duration_ms?: number | null;
+    next_run_at?: string | null;
+    consecutive_errors?: number;
+  }[]
+): Promise<number> {
+  if (jobs.length === 0) return 0;
+
+  const existingJobs = await fetchCronJobs();
+  const existingById = new Map(existingJobs.map((job) => [job.id, job]));
+  const mergedJobs = jobs.map((job) => {
+    const existing = existingById.get(job.id);
+    if (!existing) return job;
+
+    return {
+      ...job,
+      last_run_at: job.last_run_at ?? existing.last_run_at,
+      last_status: job.last_status ?? existing.last_status,
+      last_duration_ms: job.last_duration_ms ?? existing.last_duration_ms,
+      next_run_at: job.next_run_at ?? existing.next_run_at,
+      consecutive_errors: job.consecutive_errors ?? existing.consecutive_errors,
+    };
+  });
+
+  await upsertCronJobs(mergedJobs);
+
+  const activeIds = jobs.map((job) => job.id);
+  await sql()`
+    UPDATE cron_jobs
+    SET enabled = false
+    WHERE NOT (id = ANY(${activeIds}::text[]))
+  `;
+
+  return jobs.length;
+}
+
 // --- Job Runs ---
 
 export interface DbJobRun {
@@ -1788,6 +1816,43 @@ export async function insertJobRun(run: {
     summary: r.summary ? String(r.summary) : null,
     created_at: toDateTimeStr(r.created_at),
   };
+}
+
+export async function upsertJobRuns(
+  runs: {
+    job_id: string;
+    agent_id?: string;
+    started_at: string;
+    completed_at?: string | null;
+    status: string;
+    summary?: string | null;
+  }[]
+): Promise<number> {
+  let upserted = 0;
+
+  for (const run of runs) {
+    const existing = await sql()`
+      SELECT id
+      FROM job_runs
+      WHERE job_id = ${run.job_id}
+        AND started_at = ${run.started_at}::timestamptz
+      LIMIT 1
+    `;
+
+    if (existing.length > 0) {
+      await updateJobRun(String(existing[0].id), {
+        completed_at: run.completed_at ?? undefined,
+        status: run.status,
+        summary: run.summary ?? undefined,
+      });
+    } else {
+      await insertJobRun(run);
+    }
+
+    upserted++;
+  }
+
+  return upserted;
 }
 
 export async function updateJobRun(
@@ -1862,7 +1927,6 @@ export async function fetchTasksForMonth(start: string, end: string): Promise<Db
     title: String(r.title),
     detail: r.detail ? String(r.detail) : null,
     status: String(r.status),
-    priority: String(r.priority),
     effort: r.effort ? String(r.effort) : null,
     due_date: r.due_date ? toDateStr(r.due_date) : null,
     blocked_by: r.blocked_by ? String(r.blocked_by) : null,

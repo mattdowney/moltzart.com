@@ -173,43 +173,48 @@ Prose-styled markdown rendering classes defined in `globals.css`:
 
 | Utility | Value | Common Use |
 |---|---|---|
-| `gap-1` / `space-y-1` | 4px | Tight inline spacing |
-| `gap-1.5` / `space-y-1.5` | 6px | Tight list items |
-| `gap-2` / `space-y-2` | 8px | Icon + text pairs, standard list items |
-| `gap-2.5` | 10px | Input internal spacing |
-| `gap-3` / `space-y-3` | 12px | Card stacks, button groups |
-| `gap-4` / `space-y-4` | 16px | Section group spacing |
-| `gap-6` / `space-y-6` | 24px | Major section spacing |
+| `gap-1` / `space-y-1` | 4px | Micro spacing inside dense metadata or inline controls |
+| `gap-2` / `space-y-2` | 8px | Icon + label, compact rows, chip wraps |
+| `gap-3` / `space-y-3` | 12px | Default card stacks, control groups |
+| `gap-4` / `space-y-4` | 16px | Primary gutter between peer groups or columns |
+| `gap-5` / `space-y-5` | 20px | Expanded stack when 16px feels cramped |
+| `gap-6` / `space-y-6` | 24px | Section rhythm inside a page |
+| `gap-8` / `space-y-8` | 32px | Major section break or page-level gutter |
+| `gap-12` / `space-y-12` | 48px | Large canvas margin, rarely inside app surfaces |
+| `gap-16` / `space-y-16` | 64px | Top-level page rhythm only |
 
 ### Semantic Spacing Aliases
 
 | Intent | Value |
 |---|---|
 | Inline gap (icon + text) | `gap-2` |
-| List items | `space-y-1.5` to `space-y-2` |
+| Control group | `gap-3` |
+| Group-to-group gutter | `gap-4` |
 | Card stacks | `space-y-3` |
 | Section spacing | `space-y-6` / `gap-6` |
-| Card padding | `px-4 py-3` |
-| Input padding | `px-4 py-2.5` |
+| Major page break | `space-y-8` |
+| Card or toolbar row padding | `px-4 py-3` |
+| Compact table header | `px-4 py-2` |
 
 ### Layout Dimensions
 
 | Context | Max Width | Usage |
 |---|---|---|
 | Public pages | `max-w-xl` (576px) | Homepage, centered content |
-| Admin pages | `max-w-4xl` (896px) | All admin views |
+| Admin pages | `max-w-[1080px]` | Default admin content width |
 | Page padding (public) | `p-6 md:p-8` | Responsive padding |
 | Page padding (admin) | `p-6` | Consistent admin padding |
 
 ### Admin Page Structure Pattern
 
 ```tsx
-<div className="max-w-4xl">
+<div className="max-w-[1080px] mx-auto">
   <PageHeader title="Page Title" subtitle="Optional subtitle" />
 
-  <div className="space-y-6 mt-6">
+  <div className="space-y-6 mt-8">
     <div>
-      <h2 className="type-label text-zinc-500 mb-3">Section Label</h2>
+      <h2 className="type-body font-medium text-zinc-100 mb-2">Section Title</h2>
+      <p className="type-body-sm text-zinc-500 mb-4">Short guidance for the section.</p>
       {/* Section content */}
     </div>
   </div>

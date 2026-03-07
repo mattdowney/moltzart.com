@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertCronJobs, fetchCronJobs } from "@/lib/db";
+import { fetchCronJobs } from "@/lib/db";
+import { ingestCronSnapshot } from "@/lib/openclaw-crons";
 
 function checkIngestAuth(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
@@ -22,12 +23,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { jobs } = body;
+  const { jobs, runs, sync } = body;
 
-  if (!Array.isArray(jobs) || jobs.length === 0) {
-    return NextResponse.json({ error: "Missing required field: jobs (array)" }, { status: 400 });
+  if ((!Array.isArray(jobs) || jobs.length === 0) && (!Array.isArray(runs) || runs.length === 0)) {
+    return NextResponse.json({ error: "Missing required field: jobs or runs (array)" }, { status: 400 });
   }
 
-  const upserted = await upsertCronJobs(jobs);
-  return NextResponse.json({ ok: true, upserted });
+  const { upsertedJobs, upsertedRuns } = await ingestCronSnapshot({ jobs, runs, sync: sync === true });
+  return NextResponse.json({ ok: true, upsertedJobs, upsertedRuns });
 }

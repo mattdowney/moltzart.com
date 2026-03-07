@@ -1,3 +1,14 @@
+import { CodeToken } from "@/components/admin/code-token";
+
+const standards = [
+  <>Inputs use <CodeToken>bg-zinc-900 border-zinc-800 rounded-lg text-sm</CodeToken></>,
+  <>Focus state: <CodeToken>border-zinc-600 + ring-1 ring-teal-500/60</CodeToken></>,
+  <>Error state: <CodeToken>border-red-400/50</CodeToken> with red helper text below</>,
+  <>Disabled: <CodeToken>opacity-50</CodeToken> with <CodeToken>disabled</CodeToken> attribute</>,
+  <>Labels use <CodeToken>type-body-sm text-zinc-400</CodeToken>, placed above the input</>,
+  <>Placeholder text uses <CodeToken>placeholder-zinc-600</CodeToken></>,
+];
+
 export default function FormElementsPage() {
   return (
     <div className="divide-y divide-zinc-700/50 [&>section]:py-10 [&>section:first-child]:pt-0">
@@ -76,14 +87,7 @@ export default function FormElementsPage() {
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-4">Standards</h2>
         <ul className="space-y-2">
-          {[
-            "Inputs use bg-zinc-900 border-zinc-800 rounded-lg text-sm",
-            "Focus state: border-zinc-600 + ring-1 ring-teal-500/60",
-            "Error state: border-red-400/50 with red helper text below",
-            "Disabled: opacity-50 with disabled attribute",
-            "Labels use type-body-sm text-zinc-400, placed above the input",
-            "Placeholder text uses placeholder-zinc-600",
-          ].map((rule, i) => (
+          {standards.map((rule, i) => (
             <li key={i} className="flex items-start gap-2 type-body-sm text-zinc-400">
               <span className="text-zinc-600 shrink-0">&bull;</span>
               <span>{rule}</span>

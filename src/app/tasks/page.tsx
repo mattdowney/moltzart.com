@@ -13,10 +13,13 @@ import {
   RefreshCw,
   Lock,
   Repeat,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
-import { Panel } from "@/components/admin/panel";
+import { AuthShell } from "@/components/admin/auth-shell";
+import { CollapsiblePanel } from "@/components/admin/collapsible-panel";
+import { PageHeader } from "@/components/admin/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Task {
   text: string;
@@ -113,81 +116,117 @@ function TaskItem({ task }: { task: Task }) {
 function SectionCard({ section }: { section: Section }) {
   const config = sectionConfig[section.id] || sectionConfig.backlog;
   const Icon = config.icon;
-  const [collapsed, setCollapsed] = useState(section.id === "completed");
-
-  const Chevron = collapsed ? ChevronRight : ChevronDown;
+  const hasTasks = section.tasks.length > 0;
 
   return (
-    <Panel>
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/20 transition-colors rounded-lg"
-      >
-        <Icon size={16} className={config.color} />
-        <span className="type-body-sm font-medium text-zinc-200 flex-1 text-left">
-          {section.title}
-        </span>
-        <span
-          className={`type-badge px-2 py-1 rounded-full border ${config.badge}`}
-        >
+    <CollapsiblePanel
+      icon={Icon}
+      iconClassName={config.color}
+      title={section.title}
+      defaultCollapsed={section.id === "completed"}
+      meta={
+        <Badge variant="status" shape="pill" className={config.badge}>
           {section.tasks.length}
-        </span>
-        <Chevron size={14} className="text-zinc-600" />
-      </button>
-      {!collapsed && section.tasks.length > 0 && (
-        <div className="px-4 pb-3 border-t border-zinc-800/30">
-          <div className="pt-2">
-            {section.tasks.map((task, i) => (
-              <TaskItem key={i} task={task} />
-            ))}
-          </div>
+        </Badge>
+      }
+      bodyClassName="px-4 pb-3"
+      emptyState={<p className="type-body-sm text-zinc-600 pt-3 italic">Nothing here</p>}
+    >
+      {hasTasks ? (
+        <div className="pt-2">
+          {section.tasks.map((task, i) => (
+            <TaskItem key={i} task={task} />
+          ))}
         </div>
-      )}
-      {!collapsed && section.tasks.length === 0 && (
-        <div className="px-4 pb-3 border-t border-zinc-800/30">
-          <p className="type-body-sm text-zinc-600 pt-2 italic">Nothing here</p>
-        </div>
-      )}
-    </Panel>
+      ) : null}
+    </CollapsiblePanel>
   );
 }
 
 function RecurringStrip({ tasks }: { tasks: RecurringTask[] }) {
-  const [open, setOpen] = useState(false);
-
   if (tasks.length === 0) return null;
 
   return (
-    <div className="border border-zinc-800/30 rounded-lg bg-zinc-900/20">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/20 transition-colors rounded-lg"
-      >
-        <Repeat size={14} className="text-zinc-500" />
-        <span className="type-label text-zinc-500 flex-1 text-left">
-          Recurring
-        </span>
-        <span className="type-body-sm text-zinc-600">{tasks.length}</span>
-        {open ? (
-          <ChevronDown size={12} className="text-zinc-600" />
-        ) : (
-          <ChevronRight size={12} className="text-zinc-600" />
-        )}
-      </button>
-      {open && (
-        <div className="px-4 pb-3 border-t border-zinc-800/20">
-          <div className="pt-2 space-y-2">
-            {tasks.map((t, i) => (
-              <div key={i} className="flex items-center gap-3 type-body-sm">
-                <span className="text-zinc-300 flex-1">{t.task}</span>
-                <span className="text-zinc-500">{t.schedule}</span>
-                <span className="text-zinc-600">{t.method}</span>
-              </div>
-            ))}
+    <CollapsiblePanel
+      icon={Repeat}
+      title="Recurring"
+      defaultCollapsed
+      meta={<span className="type-body-sm text-zinc-600">{tasks.length}</span>}
+      bodyClassName="px-4 pb-3"
+    >
+      <div className="pt-2 space-y-2">
+        {tasks.map((t, i) => (
+          <div key={i} className="flex items-center gap-3 type-body-sm">
+            <span className="text-zinc-300 flex-1">{t.task}</span>
+            <span className="text-zinc-500">{t.schedule}</span>
+            <span className="text-zinc-600">{t.method}</span>
           </div>
-        </div>
+        ))}
+      </div>
+    </CollapsiblePanel>
+  );
+}
+
+function TasksHeader({
+  lastUpdated,
+  loading,
+  onRefresh,
+}: {
+  lastUpdated: Date | null;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <PageHeader title="Tasks">
+      {lastUpdated && (
+        <span className="type-body-sm text-zinc-500">
+          Updated{" "}
+          {lastUpdated.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
       )}
-    </div>
+      <Button type="button" variant="ghost" size="icon-sm" onClick={onRefresh} disabled={loading}>
+        <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+      </Button>
+    </PageHeader>
+  );
+}
+
+function TasksPasswordGate({
+  password,
+  loading,
+  error,
+  onSubmit,
+  onPasswordChange,
+}: {
+  password: string;
+  loading: boolean;
+  error: string;
+  onSubmit: (event: React.FormEvent) => void;
+  onPasswordChange: (value: string) => void;
+}) {
+  return (
+    <AuthShell
+      icon={Lock}
+      title="Tasks"
+      subtitle="Internal task feed. Enter the shared password to load the current queue."
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => onPasswordChange(e.target.value)}
+          placeholder="Password"
+          autoFocus
+        />
+        {error && <p className="type-body-sm text-red-400">{error}</p>}
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "Loading..." : "View Tasks"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }
 
@@ -241,60 +280,24 @@ export default function Tasks() {
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-8">
-        <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
-          <div className="flex items-center gap-3">
-            <Lock size={18} className="text-zinc-500" />
-            <h1 className="type-h3">Tasks</h1>
-          </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-zinc-100 placeholder-zinc-600 type-body-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60"
-            autoFocus
-          />
-          {error && <p className="text-red-400 type-body-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-zinc-800 py-3 type-body-sm font-medium transition-colors hover:bg-zinc-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 disabled:opacity-50 disabled:active:scale-100"
-          >
-            {loading ? "Loading..." : "View Tasks"}
-          </button>
-        </form>
-      </div>
+      <TasksPasswordGate
+        password={password}
+        loading={loading}
+        error={error}
+        onSubmit={handleSubmit}
+        onPasswordChange={setPassword}
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6 md:p-8">
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="type-h3">Tasks</h1>
-          <div className="flex items-center gap-3">
-            {lastUpdated && (
-              <span className="type-body-sm text-zinc-600">
-                {lastUpdated.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-            <button
-              onClick={() => fetchTasks(password)}
-              disabled={loading}
-              className="inline-flex size-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800/40 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-              title="Refresh"
-            >
-              <RefreshCw
-                size={14}
-                className={loading ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
-        </div>
+      <div className="max-w-[1080px] mx-auto space-y-6">
+        <TasksHeader
+          lastUpdated={lastUpdated}
+          loading={loading}
+          onRefresh={() => fetchTasks(password)}
+        />
 
         {data && (
           <div className="space-y-3">

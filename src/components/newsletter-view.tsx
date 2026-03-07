@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import type { NewsletterDigest } from "@/lib/db";
-import { ChevronDown, ChevronRight, ExternalLink, Newspaper, Trash2 } from "lucide-react";
+import { ExternalLink, Newspaper, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CollectionPanel } from "@/components/admin/collection-panel";
 import { EmptyState } from "@/components/admin/empty-state";
-import { Panel } from "@/components/admin/panel";
 import { PillarTag } from "@/components/admin/tag-badge";
 
 export function NewsletterView({ digests: initialDigests }: { digests: NewsletterDigest[] }) {
@@ -44,62 +45,103 @@ export function NewsletterView({ digests: initialDigests }: { digests: Newslette
       {digests.map((digest) => {
         const isOpen = openDates.has(digest.date);
         return (
-          <Panel key={digest.date} className="flex flex-col">
-            <button
-              onClick={() => toggleDay(digest.date)}
-              className="flex items-center justify-between px-4 py-3 w-full text-left hover:bg-zinc-800/20 transition-colors rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <Newspaper size={14} className="text-teal-400" />
-                <span className="type-body-sm font-medium text-zinc-200">{digest.label}</span>
-                <span className="type-body-sm text-zinc-500">{digest.articles.length} articles</span>
-              </div>
-              {isOpen
-                ? <ChevronDown size={14} className="text-zinc-600" />
-                : <ChevronRight size={14} className="text-zinc-600" />
-              }
-            </button>
-
-            {isOpen && (
-              <div className="divide-y divide-zinc-800/30 border-t border-zinc-800/30">
-                {digest.articles.map((article) => {
-                  const Wrapper = article.link ? "a" : "div";
-                  const linkProps = article.link
-                    ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
-                    : {};
-                  return (
-                    <div key={article.id} className="flex items-start gap-2 px-4 py-3 hover:bg-zinc-800/40 transition-colors group">
-                      <Wrapper {...linkProps} className="flex-1 min-w-0">
-                        <div className="mb-1">
-                          {article.category && <PillarTag pillar={article.category} />}
-                          <p className="type-body-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate mt-1">
-                            {article.title}
-                          </p>
-                        </div>
-                        <p className="type-body-sm text-zinc-500 line-clamp-2">
-                          {article.description}
-                        </p>
-                      </Wrapper>
-                      <div className="flex items-center gap-1 shrink-0 mt-1">
-                        {article.link && (
-                          <ExternalLink size={14} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
-                        )}
-                        <button
-                          onClick={(e) => { e.preventDefault(); deleteArticle(digest.date, article.id); }}
-                          className="text-zinc-700 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                          title="Delete article"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Panel>
+          <CollapsibleDigestPanel
+            key={digest.date}
+            title={digest.label}
+            countLabel={`${digest.articles.length} articles`}
+            isOpen={isOpen}
+            onToggle={() => toggleDay(digest.date)}
+          >
+            {digest.articles.map((article) => (
+              <NewsletterRow
+                key={article.id}
+                digestDate={digest.date}
+                article={article}
+                onDelete={deleteArticle}
+              />
+            ))}
+          </CollapsibleDigestPanel>
         );
       })}
+    </div>
+  );
+}
+
+function CollapsibleDigestPanel({
+  title,
+  countLabel,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string;
+  countLabel: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <CollectionPanel
+      icon={Newspaper}
+      iconClassName="text-teal-400"
+      title={title}
+      description="A bounded review set for one day in the selected week."
+      open={isOpen}
+      onOpenChange={onToggle}
+      meta={<span className="type-body-sm text-zinc-500">{countLabel}</span>}
+      bodyClassName="divide-y divide-zinc-800/30"
+      className="overflow-hidden"
+    >
+      {isOpen ? children : null}
+    </CollectionPanel>
+  );
+}
+
+function NewsletterRow({
+  digestDate,
+  article,
+  onDelete,
+}: {
+  digestDate: string;
+  article: NewsletterDigest["articles"][number];
+  onDelete: (digestDate: string, articleId: string) => Promise<void>;
+}) {
+  const Wrapper = article.link ? "a" : "div";
+  const linkProps = article.link
+    ? { href: article.link, target: "_blank" as const, rel: "noopener noreferrer" }
+    : {};
+
+  return (
+    <div className="flex items-start gap-2 px-4 py-3 hover:bg-zinc-800/40 transition-colors group">
+      <Wrapper {...linkProps} className="flex-1 min-w-0">
+        <div className="mb-1">
+          {article.category && <PillarTag pillar={article.category} />}
+          <p className="type-body-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate mt-1">
+            {article.title}
+          </p>
+        </div>
+        <p className="type-body-sm text-zinc-500 line-clamp-2">
+          {article.description}
+        </p>
+      </Wrapper>
+      <div className="flex items-center gap-1 shrink-0 mt-1">
+        {article.link && (
+          <ExternalLink size={14} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={(e) => {
+            e.preventDefault();
+            void onDelete(digestDate, article.id);
+          }}
+          className="text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100"
+          title="Delete article"
+        >
+          <Trash2 size={14} />
+        </Button>
+      </div>
     </div>
   );
 }

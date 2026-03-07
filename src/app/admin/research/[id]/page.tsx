@@ -1,23 +1,18 @@
 import { notFound } from "next/navigation";
-import { ExternalLink, FileSearch } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { DomainTag } from "@/components/admin/tag-badge";
 import { fetchProjectById, fetchResearchArtifactById } from "@/lib/db";
-import { Panel, PanelHeader } from "@/components/admin/panel";
+import { ContextRail } from "@/components/admin/context-rail";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
 import { extractHeadings } from "@/lib/research-headings";
 import { ResearchToc } from "@/components/admin/research-toc";
-import { PageHeader } from "@/components/admin/page-header";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
+import { formatShortDate } from "@/lib/date-format";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ id: string }>;
-}
-
-function formatDate(input: string): string {
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function getLinkItems(sourceLinks: unknown[] | null): Array<{ label: string; url: string }> {
@@ -48,11 +43,62 @@ export default async function AdminResearchDetailPage({ params }: Props) {
 
   const sourceLinks = getLinkItems(artifact.source_links);
   const headings = extractHeadings(artifact.body_md);
+  const railSections = [
+    {
+      id: "meta",
+      title: "Context",
+      content: (
+        <>
+          <p className="type-body-sm text-zinc-400">{formatShortDate(artifact.created_at)}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <DomainTag domain={artifact.domain} />
+            {linkedProject && (
+              <a
+                href={`/admin/projects/${linkedProject.project.slug}`}
+                className="type-body-sm text-zinc-400 transition-colors hover:text-teal-400"
+              >
+                {linkedProject.project.title}
+              </a>
+            )}
+          </div>
+        </>
+      ),
+    },
+    ...(sourceLinks.length > 0
+      ? [{
+          id: "sources",
+          title: "Source Links",
+          content: (
+            <div className="space-y-2">
+              {sourceLinks.map((item) => (
+                <a
+                  key={`${item.url}-${item.label}`}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-zinc-800/60 bg-zinc-950/50 px-3 py-3 transition-colors hover:border-zinc-700/60 hover:bg-zinc-900/60"
+                >
+                  <span className="type-body-sm text-zinc-300">{item.label}</span>
+                  <ExternalLink size={12} className="mt-1 shrink-0 text-teal-400" />
+                </a>
+              ))}
+            </div>
+          ),
+        }]
+      : []),
+    ...(headings.length > 0
+      ? [{
+          id: "toc",
+          title: "On This Page",
+          content: <ResearchToc headings={headings} />,
+        }]
+      : []),
+  ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_14rem] gap-8">
-      <div className="min-w-0 lg:border-r lg:border-zinc-800 lg:pr-8">
-        <PageHeader
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="min-w-0 lg:border-r lg:border-zinc-800/60 lg:pr-8">
+        <AdminPageIntro
           title={artifact.title}
           breadcrumbs={[
             { label: "Research", href: "/admin/research" },
@@ -62,46 +108,13 @@ export default async function AdminResearchDetailPage({ params }: Props) {
             { label: artifact.title },
           ]}
         />
-        <div className="flex items-center gap-3 mt-1">
-          <span className="text-sm text-zinc-500">{formatDate(artifact.created_at)}</span>
-          <DomainTag domain={artifact.domain} />
-        </div>
 
         <div className="mt-6">
           <MarkdownRenderer content={artifact.body_md} generateIds skipFirstH1 />
         </div>
-
-        {sourceLinks.length > 0 && (
-          <Panel className="flex flex-col mt-4">
-            <PanelHeader
-              icon={FileSearch}
-              title="Source links"
-              count={sourceLinks.length}
-              countLabel="links"
-            />
-            <div className="divide-y divide-zinc-800/30">
-              {sourceLinks.map((item) => (
-                <a
-                  key={`${item.url}-${item.label}`}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors"
-                >
-                  <span className="type-body-sm text-zinc-300 truncate">{item.label}</span>
-                  <ExternalLink size={12} className="text-teal-400 shrink-0" />
-                </a>
-              ))}
-            </div>
-          </Panel>
-        )}
       </div>
 
-      {headings.length > 0 && (
-        <aside className="hidden lg:block">
-          <ResearchToc headings={headings} />
-        </aside>
-      )}
+      <ContextRail sections={railSections} />
     </div>
   );
 }

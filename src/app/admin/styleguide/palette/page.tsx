@@ -136,7 +136,7 @@ export default function PalettePage() {
             </div>
             <div className="flex-1 grid grid-cols-9 gap-2">
               {scaleSteps.map((step) => (
-                <span key={step} className="type-body-sm text-zinc-500 text-center">{step}</span>
+                <span key={step} className="text-2xs font-mono text-zinc-500 text-center">{step}</span>
               ))}
             </div>
           </div>

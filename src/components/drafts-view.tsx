@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import type { DraftDay, DbXDraft } from "@/lib/db";
-import { ChevronDown, ChevronRight, ExternalLink, PenLine, Trash2 } from "lucide-react";
+import { ExternalLink, PenLine, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CollectionPanel } from "@/components/admin/collection-panel";
 import { EmptyState } from "@/components/admin/empty-state";
-import { Panel } from "@/components/admin/panel";
 
 const STATUS_STYLES: Record<string, string> = {
   queued: "text-amber-400",
@@ -50,37 +52,57 @@ export function DraftsView({ days: initialDays }: { days: DraftDay[] }) {
       {days.map((day) => {
         const isOpen = openDates.has(day.date);
         return (
-          <Panel key={day.date} className="flex flex-col">
-            <button
-              onClick={() => toggleDay(day.date)}
-              className="flex items-center justify-between px-4 py-3 w-full text-left hover:bg-zinc-800/20 transition-colors rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <PenLine size={14} className="text-teal-400" />
-                <span className="type-body-sm font-medium text-zinc-200">{day.label}</span>
-                <span className="type-body-sm text-zinc-500">{day.drafts.length} drafts</span>
-              </div>
-              {isOpen
-                ? <ChevronDown size={14} className="text-zinc-600" />
-                : <ChevronRight size={14} className="text-zinc-600" />
-              }
-            </button>
-
-            {isOpen && (
-              <div className="border-t border-zinc-800/30 divide-y divide-zinc-800/30">
-                {day.drafts.map((draft) => (
-                  <DraftRow
-                    key={draft.id}
-                    draft={draft}
-                    onDelete={() => deleteDraft(day.date, draft.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
+          <CollapsibleDayPanel
+            key={day.date}
+            icon={PenLine}
+            title={day.label}
+            countLabel={`${day.drafts.length} drafts`}
+            isOpen={isOpen}
+            onToggle={() => toggleDay(day.date)}
+          >
+            {day.drafts.map((draft) => (
+              <DraftRow
+                key={draft.id}
+                draft={draft}
+                onDelete={() => deleteDraft(day.date, draft.id)}
+              />
+            ))}
+          </CollapsibleDayPanel>
         );
       })}
     </div>
+  );
+}
+
+function CollapsibleDayPanel({
+  icon,
+  title,
+  countLabel,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  icon: typeof PenLine;
+  title: string;
+  countLabel: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <CollectionPanel
+      icon={icon}
+      iconClassName="text-teal-400"
+      title={title}
+      description="A bounded batch of drafts from one day in the selected week."
+      open={isOpen}
+      onOpenChange={onToggle}
+      meta={<span className="type-body-sm text-zinc-500">{countLabel}</span>}
+      bodyClassName="divide-y divide-zinc-800/30"
+      className="overflow-hidden"
+    >
+      {isOpen ? children : null}
+    </CollectionPanel>
   );
 }
 
@@ -92,9 +114,9 @@ function DraftRow({ draft, onDelete }: { draft: DbXDraft; onDelete: () => void }
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className={`type-badge ${statusClass}`}>
+            <Badge className={statusClass}>
               {draft.status}
-            </span>
+            </Badge>
             {draft.source_batch && (
               <span className="type-body-sm text-zinc-600">{draft.source_batch}</span>
             )}
@@ -114,13 +136,16 @@ function DraftRow({ draft, onDelete }: { draft: DbXDraft; onDelete: () => void }
             {draft.text}
           </p>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
           onClick={onDelete}
-          className="text-zinc-700 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100 shrink-0 mt-1"
+          className="text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 shrink-0 mt-1"
           title="Delete draft"
         >
           <Trash2 size={14} />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -75,6 +75,10 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

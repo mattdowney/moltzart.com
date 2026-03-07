@@ -1,4 +1,5 @@
 import { Plus, Trash2, Download, Settings, ArrowRight, Loader2 } from "lucide-react";
+import { CodeToken } from "@/components/admin/code-token";
 import { Button } from "@/components/ui/button";
 
 const variants = [
@@ -15,6 +16,13 @@ const sizes = [
   { size: "sm", label: "Small" },
   { size: "default", label: "Default" },
   { size: "lg", label: "Large" },
+] as const;
+
+const iconSpecs = [
+  { context: "xs button", icon: "12px", gap: "6px", note: "Dense utility actions only." },
+  { context: "sm button", icon: "14px", gap: "6px", note: "Default admin action size." },
+  { context: "default / lg button", icon: "14px", gap: "6px", note: "Do not scale icons up with the button." },
+  { context: "maximum", icon: "14px", gap: "8px", note: "If you need more than this, the control is oversized." },
 ] as const;
 
 export default function ButtonsPage() {
@@ -61,9 +69,48 @@ export default function ButtonsPage() {
             <Button size="icon-lg" variant="outline"><Settings /></Button>
           </div>
           <p className="type-body-sm text-zinc-500">
-            Icon-only buttons use <code className="text-2xs font-mono text-teal-400">size=&quot;icon-*&quot;</code> variants.
+            Icon-only buttons use <CodeToken>size=&quot;icon-*&quot;</CodeToken> variants.
           </p>
         </div>
+      </section>
+
+      <section>
+        <h2 className="type-body font-medium text-zinc-100 mb-4">Icon Rules</h2>
+        <div className="rounded-lg border border-zinc-800/50 bg-zinc-900/30 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-zinc-800/50 bg-zinc-900/60">
+                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-500">Context</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-500">Icon</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-500">Gap</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-500">Rule</th>
+              </tr>
+            </thead>
+            <tbody className="text-xs text-zinc-300">
+              {iconSpecs.map((spec) => (
+                <tr key={spec.context} className="border-b border-zinc-800/30 last:border-0">
+                  <td className="px-4 py-2">{spec.context}</td>
+                  <td className="px-4 py-2 font-mono text-zinc-400">{spec.icon}</td>
+                  <td className="px-4 py-2 font-mono text-zinc-400">{spec.gap}</td>
+                  <td className="px-4 py-2 text-zinc-500">{spec.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <ul className="mt-4 space-y-2">
+          {[
+            <>Default icon size is <CodeToken>14px</CodeToken>. Small utility buttons may drop to <CodeToken>12px</CodeToken>.</>,
+            <>Never exceed <CodeToken>14px</CodeToken> for inline button icons in the admin UI.</>,
+            <>Default icon-to-label spacing is <CodeToken>6px</CodeToken>. Never exceed <CodeToken>8px</CodeToken>.</>,
+            "Icons should support the label, not become the focal point of the control.",
+          ].map((rule, i) => (
+            <li key={i} className="flex items-start gap-2 type-body-sm text-zinc-400">
+              <span className="text-zinc-600 shrink-0">&bull;</span>
+              <span>{rule}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* States */}
@@ -75,7 +122,7 @@ export default function ButtonsPage() {
           <Button size="sm" disabled><Loader2 className="animate-spin" /> Loading</Button>
         </div>
         <p className="type-body-sm text-zinc-500 mt-3">
-          All buttons include <code className="text-2xs font-mono text-teal-400">active:scale-[0.98]</code> — click to test press feedback.
+          All buttons include <CodeToken>active:scale-[0.98]</CodeToken> for press feedback.
         </p>
       </section>
 
@@ -89,6 +136,7 @@ export default function ButtonsPage() {
             "Destructive only for irreversible operations",
             "Prefer size sm for in-panel actions, default for page-level",
             "Leading icon for action type, trailing icon for direction",
+            "Use 12-14px icons with 6px gap; 14px / 8px is the hard ceiling",
             "Loading state: disabled + spinner icon + label change",
           ].map((rule, i) => (
             <li key={i} className="flex items-start gap-2 type-body-sm text-zinc-400">

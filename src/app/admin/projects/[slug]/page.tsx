@@ -3,22 +3,18 @@ import { notFound } from "next/navigation";
 import { ChevronRight, FileSearch, FolderKanban, Lightbulb } from "lucide-react";
 import { fetchProjectBySlug } from "@/lib/db";
 import { Panel, PanelHeader } from "@/components/admin/panel";
+import { ContextRail } from "@/components/admin/context-rail";
 import { EmptyState } from "@/components/admin/empty-state";
 import { MarkdownRenderer } from "@/components/admin/markdown-renderer";
 import { ProductResearchView } from "@/components/product-research-view";
 import { DomainTag, StatusTag, KindTag } from "@/components/admin/tag-badge";
-import { PageHeader } from "@/components/admin/page-header";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
+import { formatShortDate } from "@/lib/date-format";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
-}
-
-function formatDate(input: string): string {
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default async function ProjectDetailPage({ params }: Props) {
@@ -28,28 +24,50 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   const { project, linkedProduct, productResearch, artifacts } = data;
   const hasProjectOverview = Boolean(project.summary?.trim());
+  const railSections = [
+    {
+      id: "status",
+      title: "Project Context",
+      content: (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusTag status={project.status} />
+            <KindTag kind={project.kind} />
+          </div>
+          <p className="type-body-sm text-zinc-400">Updated {formatShortDate(project.updated_at)}</p>
+          {linkedProduct && (
+            <Link
+              href={`/admin/products/${linkedProduct.slug}`}
+              className="type-body-sm text-zinc-400 transition-colors hover:text-teal-400"
+            >
+              Product: {linkedProduct.title}
+            </Link>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "inventory",
+      title: "Attached Research",
+      content: (
+        <>
+          <p className="type-body text-zinc-100">{artifacts.length}</p>
+          <p className="type-body-sm text-zinc-500">Artifacts tied directly to this project.</p>
+        </>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      <PageHeader
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="min-w-0 space-y-6 lg:border-r lg:border-zinc-800/60 lg:pr-8">
+      <AdminPageIntro
         title={project.title}
-        subtitle={`Updated ${formatDate(project.updated_at)}`}
         breadcrumbs={[
           { label: "Projects", href: "/admin/projects" },
           { label: project.title },
         ]}
-      >
-        <StatusTag status={project.status} />
-        <KindTag kind={project.kind} />
-        {linkedProduct && (
-          <Link
-            href={`/admin/products/${linkedProduct.slug}`}
-            className="type-badge text-zinc-500 hover:text-teal-400 transition-colors"
-          >
-            {linkedProduct.title}
-          </Link>
-        )}
-      </PageHeader>
+      />
 
       {hasProjectOverview && (
         <Panel className="px-4 py-4">
@@ -137,6 +155,9 @@ export default async function ProjectDetailPage({ params }: Props) {
       )}
 
       {productResearch.length > 0 && <ProductResearchView research={productResearch} />}
+      </div>
+
+      <ContextRail sections={railSections} />
     </div>
   );
 }

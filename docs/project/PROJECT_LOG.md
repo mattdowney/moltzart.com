@@ -1,5 +1,23 @@
 # Project Log
 
+## 2026-03-05 (session 23)
+
+- Dashboard redesign: replaced 5-panel layout (MetricStrip, Now, Watch, Latest, Newsletter Picks) with a focused 3-section single-column stack: Action Queue (blocked/urgent/ready tasks in a Panel), Health Strip (agents/blocked/completion as inline signals), and Recent Activity (one-line latest event). Deleted `src/components/dashboard/` directory (orphaned `newsletter-highlights.tsx` and `stat-card.tsx`).
+- Removed `eyebrow` prop from `AdminPageIntro` and all 9 admin pages that used it ("Operational Workbench", "Signal Board", "Weekly Review", etc.).
+- Stripped all subtitles, meta lines, and descriptions from every admin page header. All list pages now use title-only `AdminPageIntro`. Detail pages keep breadcrumbs but no subtitle/meta.
+- Removed MetricStrip from tasks page (redundant with kanban column headers).
+- Fixed `AdminPageIntro` divider: border tokens now use documented values (`border-zinc-800` default, `border-zinc-800/50` soft). Added `mb-4` to match `pb-4` for symmetrical spacing around the divider line.
+- Added "Page Headers" section to `/admin/styleguide/spacing` with 7 live preview containers showing every `AdminPageIntro` configuration (title only, title+subtitle, breadcrumbs, divider variants, etc.).
+- **Decision:** Dashboard follows "action queue + health strip + breadcrumb trail" pattern — single column, priority-stacked. No decorative metrics. Every pixel earns its space. Newsletter/research have their own pages; dashboard doesn't duplicate them.
+- **Decision:** All admin page headers are title-only. Subtitles and meta text were noise — the page content is the orientation. Detail pages keep breadcrumbs for navigation structure.
+- **Decision:** `AdminPageIntro` divider uses `border-zinc-800` (strong separator from UI Guidelines) for default, `border-zinc-800/50` for soft. Previous values (`/40`, `/60`) were invented and didn't match the documented border system.
+- **Learned:** When `AdminPageIntro` has `pb-X` above its `border-b` but no `mb-X` below, the gap below the line depends entirely on the parent's `space-y`. This creates asymmetric spacing that's invisible in the component but visible on every page. The component must own both sides of its divider spacing.
+- **Learned:** The UI Guidelines document 3 border tiers: `border-zinc-800/30` (subtle/inside cards), `border-zinc-800` (section dividers), `border-zinc-700/50` (panel borders). Using values outside these tiers creates visual inconsistency.
+- **Watch:** Drafts and Newsletter pages lost their `WeekSelector` action buttons when page headers were stripped to title-only. These are functional controls — may need to be re-added as inline controls within the page content rather than in the header.
+- **Watch:** The health strip shows "0/12 on schedule" for agents because `fetchJobRunsForRange` is date-scoped and agents may not have run yet today. This is correct behavior but looks alarming first thing in the morning.
+- **Watch:** 47+ files are still uncommitted on main from sessions 22-23. Need to commit and push.
+- **Next:** Commit and push all changes. Re-evaluate whether WeekSelector needs to come back as an inline control on Drafts/Newsletter pages. Consider whether the public `/tasks` page header (which lost its subtitle and kept action children) still looks right.
+
 ## 2026-03-05 (session 22)
 
 - Unified badge system: rewrote `badge.tsx` with 3 variants (`default`, `outline`, `status`) and 2 shapes (`default`, `pill`). Refactored `tag-badge.tsx` wrappers (LaneTag, SourceTag, etc.) to compose on Badge instead of raw spans with a duplicated `tagBase` string.
@@ -285,3 +303,47 @@
 - Added a defensive timestamp comparator in `src/components/tasks-view.tsx` so task sorting remains safe even if a `Date` slips into client state.
 - **Decision:** Treat Neon datetime coercion at the data boundary as canonical (normalize once in `db.ts`) and keep UI sort logic resilient as a guardrail.
 - **Next:** Smoke check `/admin/tasks` drag/sort behavior in browser and confirm no further Date-vs-string errors after refresh.
+
+## 2026-03-05
+- Rebuilt the styleguide spacing page around an actual app-spacing model: 4px grid scale, vertical rhythm, horizontal grouping, inset/density guidance, and shared `PanelHeader` usage instead of ad hoc card title treatments. Also widened the shared admin content width from `max-w-[960px]` to `max-w-[1080px]`.
+- Added shared `CodeToken` for mono inline code references and swept the styleguide pages so utilities, component names, and prop/value snippets render consistently in `font-mono`.
+- Replaced the motion page with clearer, opinionated demos tied to `docs/project/design-guidelines.md`: duration scale, directional easing, origin-aware pop-in vs bad reference, sequential hand-off, staggered batch entry, and explicit repo motion rules.
+- **Decision:** `PanelHeader` is the canonical admin card header. Styleguide examples and real admin surfaces should compose on it instead of inventing page-local header bars.
+- **Decision:** Motion demos must explain what changed and what to look for. If a demo is technically animating but not legible on first read, it fails the page.
+- **Next:** Do a browser QA pass on `/admin/styleguide/spacing` and `/admin/styleguide/motion` to tune visual density, copy clarity, and whether any demo still feels ambiguous in practice.
+- Added a dedicated `/admin/styleguide/navigation` page, then tightened it hard: tabs now document real rail sizes (`28 / 32 / 36`), compact trigger sizing, overflow behavior, and shared-indicator motion instead of oversized static tab examples.
+- **Decision:** Navigation rails should use a shared moving indicator with restrained spring motion and sequential content hand-off beneath the rail. Tabs are orientation, not buttons; they should not inherit button-like press language.
+- Extracted `src/components/admin/summary-card.tsx` from the navigation motion demo and reused it on the cards styleguide page as a named “Summary card” pattern with stronger contrast (`bg-zinc-950/70`, clearer border) so the contained surface reads cleanly inside a panel.
+- **Next:** Browser-QA `/admin/styleguide/navigation` and `/admin/styleguide/cards` for scanability, especially whether the summary card contrast is now sufficient and whether any remaining comparison sections still show too many variants at once.
+- Added explicit icon sizing/spacing guidance to the Buttons styleguide page: default inline icons are `14px`, small utility icons `12px`, with `6px` default icon/text gap and `8px` as the hard ceiling. Navigation notes now point back to Buttons as the canonical icon rule source.
+- Split the oversized navigation styleguide route into `navigation-data.ts`, `navigation-demos.tsx`, and a thin `page.tsx` so Fast Refresh invalidates smaller modules instead of recompiling one 700+ line client page.
+- **Decision:** Admin and styleguide sidebars should not use automatic `next/link` prefetch. The visible nav lists were triggering cold compile work for sibling pages and slowing the design loop before the user even clicked.
+- **Next:** Verify the dev loop after the sidebar prefetch change. If route changes still feel sticky, measure whether the remaining lag is only cold-start compilation or whether other visible `Link` clusters need the same treatment.
+
+## 2026-03-05
+- Attempted an admin/styleguide alignment pass focused on shared primitives and internal tool surfaces: added `AuthShell` + `CollapsiblePanel`, moved `/tasks`, `tasks-view`, drafts/newsletter groupings, research groups, and several grouped list pages onto the newer admin primitives, then widened the admin shell and introduced summary-card-based top rows for projects/products/research.
+- **Decision:** Stop this direction. The work improved structural consistency but did not produce the visual/layout quality needed; swapping primitives without a stronger page-composition model still leaves the app feeling flat and generic.
+- **Decision:** The styleguide remains the source of truth, but the next pass must start from page archetypes and layout composition, not from incremental primitive substitution.
+- **Next:** Reassess the admin layout and key page archetypes (`tasks`, grouped review pages, detail workspace pages) before continuing implementation. Do not continue broad sweeps until the layout model is clarified.
+
+## 2026-03-06
+- Reworked the admin around page archetypes instead of repeated `PageHeader + SummaryCard + Panel` stacks. Added shared primitives for intros, metric strips, section tabs, collection panels, and right-side context rails, then wired them into the admin shell.
+- Redesigned the main admin surfaces: `Research` now has `By Project / Unassigned / Recent` library modes, `Projects` and `Products` now read as lifecycle pipelines, `Dashboard` is organized into `Now / Watch / Latest`, `Tasks` is framed as an operational workbench, and weekly review pages now read as bounded review batches instead of generic accordions.
+- Rebuilt detail layouts for research, project, and product pages so content stays primary and metadata/source context moves into a sticky side rail instead of interrupting the main reading flow.
+- **Decision:** The admin redesign should be driven by page intent and hierarchy first. Shared components only matter when they reinforce distinct page models like library, pipeline, workbench, weekly review, and document detail.
+- **Next:** Do a browser QA pass across the redesigned admin pages at mobile and desktop breakpoints, then decide whether to keep iterating page-by-page or do a focused cleanup pass on spacing/visual contrast. Repo-wide `npm run lint` still has pre-existing spacing-rule failures in shared UI files like `button.tsx` and `tabs.tsx`; the redesigned files themselves are ESLint-clean and `npm run build` passes.
+
+## 2026-03-06
+- Reworked the dashboard into a clearer landing page: summary cards on top, a task-driven action queue as the primary surface, and a narrower support rail for health/intake. Removed the self-explanatory `How To Use This` card and tightened the quiet-state behavior when the queue is empty.
+- Consolidated admin card surfaces into shared primitives: one radius, shared surface variants, shared card-copy tokens, and a canonical icon-tile pattern now used by summary cards and resolved-status states. Updated the cards and typography styleguide pages to document those rules explicitly.
+- Refined shared header and empty-state behavior so spacing and card-copy rhythm hold consistently across page headers, summary cards, panels, rails, and queue-clear states. The queue-clear state is now left-aligned and uses the shared icon treatment rather than a one-off centered success card.
+- **Decision:** Dashboard action queue remains task-only for now. It surfaces unfinished tasks that are blocked, urgent, or `todo`; if the queue broadens later, that should be a deliberate “attention queue” product decision, not an ad hoc mix of unrelated inputs.
+- **Decision:** Good admin UI should not explain itself with instructional cards. If a dashboard needs a “how to use this” block, the hierarchy is still wrong.
+- **Next:** Browser-QA the dashboard after the latest empty-state and typography cleanup, then audit remaining admin views for raw card wrappers or copy/layout drift that still bypass the shared surface, icon, and card-content primitives.
+
+## 2026-03-06
+- Fixed the calendar data path and UI behavior end-to-end: reconciled OpenClaw cron telemetry with schedule-synced jobs, stopped false missed-state rendering, tightened the top rail/legend layout, improved column scrolling and sticky headers, and clarified agent ownership/always-on labels.
+- Reworked the tasks surface: removed the backlog lane from the board, rebuilt the task drawer around clearer status/blocker hierarchy, standardized UI dates through a shared `MM-DD-YY` formatter, renamed dependency language from `Blocked` to `Waiting`, and aligned waiting status color/pulse treatment across dashboard and task views.
+- Removed task priority as an active product concept from UI, APIs, and DB helpers, and added a migration file to drop `tasks.priority` from the schema (`scripts/migrations/20260306_drop_tasks_priority.sql`).
+- **Decision:** Dependency state should read as `Waiting` / `Waiting On`, not `Blocked`, and it should use one consistent orange/pulsing treatment instead of mixing urgent-red and dependency-orange cues.
+- **Next:** Apply the `DROP COLUMN priority` migration in Neon after approval, then do a browser QA pass on the updated calendar/task/dashboard flows to catch any remaining copy or spacing drift.

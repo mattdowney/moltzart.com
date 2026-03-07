@@ -1,10 +1,10 @@
 // src/app/admin/newsletter/[week]/page.tsx
 import { notFound } from "next/navigation";
-import { fetchNewsletterWeek, fetchNewsletterWeekStarts } from "@/lib/db";
-import { getWeekBounds, formatWeekLabel } from "@/lib/newsletter-weeks";
+import { fetchNewsletterWeek } from "@/lib/db";
+import { getWeekBounds } from "@/lib/newsletter-weeks";
 import { NewsletterView } from "@/components/newsletter-view";
-import { WeekSelector } from "@/components/week-selector";
-import { PageHeader } from "@/components/admin/page-header";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
+import { MetricStrip } from "@/components/admin/metric-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -22,23 +22,22 @@ export default async function NewsletterWeekPage({ params }: Props) {
   }
 
   const { start, end } = getWeekBounds(week);
-  const [digests, weekStarts] = await Promise.all([
-    fetchNewsletterWeek(start, end),
-    fetchNewsletterWeekStarts(),
-  ]);
+  const digests = await fetchNewsletterWeek(start, end);
 
   const totalArticles = digests.reduce((sum, d) => sum + d.articles.length, 0);
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Newsletter">
-        {weekStarts.length > 0 ? (
-          <WeekSelector currentWeek={week} availableWeeks={weekStarts} basePath="/admin/newsletter" />
-        ) : (
-          <span className="type-body-sm text-zinc-500">{formatWeekLabel(week)}</span>
-        )}
-        <span className="type-body-sm text-zinc-500">{totalArticles} articles</span>
-      </PageHeader>
+    <div className="space-y-6">
+      <AdminPageIntro title="Newsletter" />
+
+      <MetricStrip
+        items={[
+          { label: "Digest Days", value: digests.length, note: "Days with newsletter picks this week." },
+          { label: "Articles", value: totalArticles, tone: "teal", note: "Total picks across the selected week." },
+        ]}
+        className="xl:grid-cols-2"
+      />
+
       <NewsletterView digests={digests} />
     </div>
   );

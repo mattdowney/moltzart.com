@@ -8,12 +8,7 @@ import {
   isLongFormProductDocSectionTitle,
   normalizeResearchTitle,
 } from "@/lib/products";
-
-function formatDate(input: string): string {
-  const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+import { formatShortDate } from "@/lib/date-format";
 
 function isValidationEvidence(item: DbProductResearchItem): boolean {
   return (
@@ -114,7 +109,7 @@ export function ProductResearchView({ research }: { research: DbProductResearchI
                         <div className="min-w-0">
                           <p className="type-body-sm font-medium text-zinc-200 break-words">{item.title}</p>
                           <span className="type-body-sm text-zinc-500 mt-1 inline-block">
-                            Captured {formatDate(item.created_at)}
+                            Captured {formatShortDate(item.created_at)}
                           </span>
                         </div>
                         {showSourceLink && item.source_url && (

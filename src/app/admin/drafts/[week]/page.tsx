@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { fetchXDraftsWeek, fetchXDraftWeekStarts } from "@/lib/db";
-import { getWeekBounds, formatWeekLabel } from "@/lib/newsletter-weeks";
+import { fetchXDraftsWeek } from "@/lib/db";
+import { getWeekBounds } from "@/lib/newsletter-weeks";
 import { DraftsView } from "@/components/drafts-view";
-import { WeekSelector } from "@/components/week-selector";
-import { PageHeader } from "@/components/admin/page-header";
+import { AdminPageIntro } from "@/components/admin/admin-page-intro";
+import { MetricStrip } from "@/components/admin/metric-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -20,23 +20,22 @@ export default async function DraftsWeekPage({ params }: Props) {
   }
 
   const { start, end } = getWeekBounds(week);
-  const [days, weekStarts] = await Promise.all([
-    fetchXDraftsWeek(start, end),
-    fetchXDraftWeekStarts(),
-  ]);
+  const days = await fetchXDraftsWeek(start, end);
 
   const totalDrafts = days.reduce((sum, d) => sum + d.drafts.length, 0);
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Drafts">
-        {weekStarts.length > 0 ? (
-          <WeekSelector currentWeek={week} availableWeeks={weekStarts} basePath="/admin/drafts" />
-        ) : (
-          <span className="type-body-sm text-zinc-500">{formatWeekLabel(week)}</span>
-        )}
-        <span className="type-body-sm text-zinc-500">{totalDrafts} drafts</span>
-      </PageHeader>
+    <div className="space-y-6">
+      <AdminPageIntro title="Drafts" />
+
+      <MetricStrip
+        items={[
+          { label: "Active Days", value: days.length, note: "Days with at least one draft in the selected week." },
+          { label: "Drafts", value: totalDrafts, tone: "teal", note: "Total writing candidates in this batch." },
+        ]}
+        className="xl:grid-cols-2"
+      />
+
       <DraftsView days={days} />
     </div>
   );

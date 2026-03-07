@@ -1,4 +1,5 @@
 import { Calendar, CircleAlert, Zap } from "lucide-react";
+import { CodeToken } from "@/components/admin/code-token";
 import { Badge } from "@/components/ui/badge";
 import { StatusDot } from "@/components/admin/status-dot";
 import {
@@ -19,7 +20,7 @@ export default function BadgesPage() {
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-2">Variants</h2>
         <p className="type-body-sm text-zinc-500 mb-4">
-          Three structural variants control border and background treatment. Colors are applied via className.
+          Three structural variants control border and background treatment. Colors are applied via <CodeToken>className</CodeToken>.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           <Badge>default</Badge>
@@ -60,7 +61,7 @@ export default function BadgesPage() {
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-2">Shapes</h2>
         <p className="type-body-sm text-zinc-500 mb-4">
-          Default shape uses <span className="text-2xs font-mono text-teal-400">rounded</span> (4px). Pill shape uses <span className="text-2xs font-mono text-teal-400">rounded-full</span> for counts and compact pills.
+          Default shape uses <CodeToken>rounded</CodeToken> (4px). Pill shape uses <CodeToken>rounded-full</CodeToken> for counts and compact pills.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           <Badge>rounded</Badge>
@@ -72,11 +73,26 @@ export default function BadgesPage() {
         </div>
       </section>
 
+      <section>
+        <h2 className="type-body font-medium text-zinc-100 mb-2">Sizes</h2>
+        <p className="type-body-sm text-zinc-500 mb-4">
+          Use <CodeToken>size="compact"</CodeToken> when badges need to read as dense metadata rather than primary UI chrome.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Badge variant="outline" shape="pill">default</Badge>
+          <Badge variant="outline" shape="pill" size="compact">compact</Badge>
+          <Badge variant="status" shape="pill" size="compact" className="bg-emerald-400/10 text-emerald-400 border-emerald-400/20">
+            <span className="inline-block size-1.5 rounded-full bg-emerald-400" />
+            active
+          </Badge>
+        </div>
+      </section>
+
       {/* With icons */}
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-2">With Icons</h2>
         <p className="type-body-sm text-zinc-500 mb-4">
-          SVGs inside Badge auto-size to <span className="text-2xs font-mono text-teal-400">10px</span> via <span className="text-2xs font-mono text-teal-400">[&gt;svg]:size-2.5</span>.
+          SVGs inside <CodeToken>Badge</CodeToken> auto-size to <CodeToken>10px</CodeToken> via <CodeToken>[&gt;svg]:size-2.5</CodeToken>.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           <Badge variant="outline"><Calendar /> due Mar 10</Badge>
@@ -89,7 +105,7 @@ export default function BadgesPage() {
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-2">Status Colors</h2>
         <p className="type-body-sm text-zinc-500 mb-4">
-          The <span className="text-2xs font-mono text-teal-400">status</span> variant expects a color triad: <span className="text-2xs font-mono text-teal-400">bg-color/10 text-color border-color/20</span>.
+          The <CodeToken>status</CodeToken> variant expects a color triad: <CodeToken>bg-color/10 text-color border-color/20</CodeToken>.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           {([
@@ -119,7 +135,7 @@ export default function BadgesPage() {
       <section>
         <h2 className="type-body font-medium text-zinc-100 mb-2">Domain Wrappers</h2>
         <p className="type-body-sm text-zinc-500 mb-4">
-          Convenience components that compose on Badge with preset color maps. All accept a string prop and fall back to neutral zinc.
+          Convenience components that compose on <CodeToken>Badge</CodeToken> with preset color maps. All accept a string prop and fall back to neutral zinc.
         </p>
 
         <div className="space-y-4">

@@ -1,5 +1,5 @@
-import { fetchCronJobs, fetchJobRunsForRange } from "@/lib/db";
 import { CalendarView } from "@/components/calendar-view";
+import { getCronCalendarData } from "@/lib/openclaw-crons";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +21,11 @@ function getWeekRange(date: Date) {
 export default async function AdminCalendar() {
   const now = new Date();
   const { start, end } = getWeekRange(now);
-
-  const [crons, jobRuns] = await Promise.all([
-    fetchCronJobs(),
-    fetchJobRunsForRange(start, end),
-  ]);
+  const data = await getCronCalendarData(start, end);
 
   return (
     <CalendarView
-      initialData={{ crons, jobRuns }}
+      initialData={data}
       initialStart={start}
     />
   );

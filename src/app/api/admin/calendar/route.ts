@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/admin-auth";
-import { fetchCronJobs, fetchJobRunsForRange } from "@/lib/db";
+import { getCronCalendarData } from "@/lib/openclaw-crons";
 
 export async function GET(req: NextRequest) {
   const auth = await getAdminAuth();
@@ -16,10 +16,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing start/end params" }, { status: 400 });
   }
 
-  const [crons, jobRuns] = await Promise.all([
-    fetchCronJobs(),
-    fetchJobRunsForRange(start, end),
-  ]);
-
-  return NextResponse.json({ crons, jobRuns });
+  return NextResponse.json(await getCronCalendarData(start, end));
 }

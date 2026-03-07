@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
+import { AuthShell } from "@/components/admin/auth-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function AdminLogin() {
   const router = useRouter();
@@ -36,29 +39,20 @@ export function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-8">
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
-        <div className="flex items-center gap-3">
-          <Lock size={18} className="text-zinc-500" />
-          <h1 className="type-h3">Moltzart Admin</h1>
-        </div>
-        <input
+    <AuthShell icon={Lock} title="Moltzart Admin" subtitle="Private control surface. Enter the shared password to continue.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 type-body-sm text-zinc-100 placeholder-zinc-600 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60"
           autoFocus
         />
         {error && <p className="type-body-sm text-red-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-zinc-800 py-3 type-body-sm font-medium transition-colors hover:bg-zinc-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 disabled:opacity-50 disabled:active:scale-100"
-        >
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Loading..." : "Sign In"}
-        </button>
+        </Button>
       </form>
-    </div>
+    </AuthShell>
   );
 }
