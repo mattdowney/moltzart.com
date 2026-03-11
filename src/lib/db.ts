@@ -167,6 +167,7 @@ export interface DbTask {
   effort: string | null;
   due_date: string | null;
   blocked_by: string | null;
+  assigned_to: string | null;
   board_order: number;
   created_at: string;
   updated_at: string;
@@ -256,7 +257,7 @@ export async function fetchTasksByStatus(status?: string): Promise<DbTask[]> {
 
 export async function insertTask(
   title: string,
-  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string }
+  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string; assigned_to?: string }
 ): Promise<string> {
   const capabilities = await getTaskSchemaCapabilities();
   const status = normalizeTaskStatusInput(opts?.status);
@@ -267,8 +268,8 @@ export async function insertTask(
           : await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status = ${status}`;
         const boardOrder = Number(maxOrderRows[0]?.max_order ?? 0) + 1;
         return sql()`
-          INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order)
-          VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder})
+          INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to)
+          VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null})
           RETURNING id
         `;
       })()
@@ -282,7 +283,7 @@ export async function insertTask(
 
 export async function updateTask(
   id: string,
-  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "effort" | "due_date" | "blocked_by" | "board_order">>
+  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "effort" | "due_date" | "blocked_by" | "board_order" | "assigned_to">>
 ): Promise<boolean> {
   const capabilities = await getTaskSchemaCapabilities();
   const normalizedStatus = fields.status === undefined
@@ -298,6 +299,7 @@ export async function updateTask(
         fields.due_date,
         fields.blocked_by,
         fields.board_order,
+        fields.assigned_to,
       ].some((v) => v !== undefined)
     : [
     fields.title,
@@ -306,6 +308,7 @@ export async function updateTask(
     fields.effort,
     fields.due_date,
     fields.blocked_by,
+    fields.assigned_to,
       ].some((v) => v !== undefined);
 
   if (!hasUpdates) return false;
@@ -320,6 +323,7 @@ export async function updateTask(
           due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
           blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
           board_order = COALESCE(${fields.board_order ?? null}::double precision, board_order),
+          assigned_to = COALESCE(${fields.assigned_to ?? null}::text, assigned_to),
           updated_at = now()
         WHERE id = ${id}
         RETURNING id
@@ -332,6 +336,7 @@ export async function updateTask(
           effort = COALESCE(${fields.effort ?? null}::text, effort),
           due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
           blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
+          assigned_to = COALESCE(${fields.assigned_to ?? null}::text, assigned_to),
           updated_at = now()
         WHERE id = ${id}
         RETURNING id
@@ -348,6 +353,7 @@ export interface NewsletterArticle {
   source: string;
   link: string;
   category?: string;
+  sentToOs?: boolean;
 }
 
 export interface NewsletterDigest {
@@ -402,6 +408,7 @@ export async function fetchNewsletterWeek(start: string, end: string): Promise<N
       source: r.source || "",
       link: r.link || "",
       category: r.category || undefined,
+      sentToOs: r.sent_to_os || false,
     });
   }
 
@@ -451,6 +458,10 @@ export async function fetchNewsletterWeekSummaries(): Promise<NewsletterWeekSumm
 
 export async function deleteNewsletterArticle(id: string): Promise<void> {
   await sql()`DELETE FROM newsletter_articles WHERE id = ${id}`;
+}
+
+export async function markArticleSentToOs(id: string): Promise<void> {
+  await sql()`UPDATE newsletter_articles SET sent_to_os = true WHERE id = ${id}`;
 }
 
 // --- X Drafts ---

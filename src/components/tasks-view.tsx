@@ -32,6 +32,13 @@ import {
 import { EmptyState } from "@/components/admin/empty-state";
 import { cn } from "@/lib/utils";
 import { formatShortDate, formatShortDateTime } from "@/lib/date-format";
+import { getAgentMeta } from "@/lib/agents";
+
+function isTaskLate(task: DbTask): boolean {
+  if (!task.due_date || task.status === "done") return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return task.due_date < today;
+}
 
 type TaskColumns = Record<TaskStatus, DbTask[]>;
 type DragOverState = { status: TaskStatus; index: number } | null;
@@ -200,8 +207,9 @@ function TaskCard({
   onOpenDetail: (taskId: string) => void;
 }) {
   const isDone = task.status === "done";
+  const late = isTaskLate(task);
   const canOpenDetail = !isDone;
-  const showMeta = !isDone && (Boolean(task.due_date) || Boolean(task.blocked_by));
+  const showMeta = !isDone && (Boolean(task.due_date) || Boolean(task.blocked_by) || Boolean(task.assigned_to));
 
   return (
     <div
@@ -233,14 +241,31 @@ function TaskCard({
           </p>
           {showMeta && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
+              {task.assigned_to && (() => {
+                const agent = getAgentMeta(task.assigned_to);
+                return (
+                  <Badge variant="status" shape="pill" className={cn("gap-0", agent.badge)}>
+                    {agent.short}
+                  </Badge>
+                );
+              })()}
               {task.due_date && (
-                <Badge variant="outline" className="gap-1 border-zinc-800/80 bg-zinc-900/60 text-zinc-400">
+                <Badge
+                  variant={late ? "status" : "outline"}
+                  shape="pill"
+                  className={cn(
+                    "gap-1",
+                    late
+                      ? "border-red-400/20 bg-red-400/10 text-red-400"
+                      : "border-zinc-800/80 bg-zinc-900/60 text-zinc-400"
+                  )}
+                >
                   <Calendar size={10} />
                   {formatShortDate(task.due_date)}
                 </Badge>
               )}
               {task.blocked_by && (
-                <Badge variant="status" className="gap-1 border-orange-400/20 bg-orange-400/10 text-orange-300/80">
+                <Badge variant="status" shape="pill" className="gap-1 border-orange-400/20 bg-orange-400/10 text-orange-300/80">
                   <CircleAlert size={10} />
                   waiting
                 </Badge>
@@ -438,15 +463,22 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
               {detailTask ? (
                 <>
                   <TaskStatusMeta status={normalizeTaskStatusInput(detailTask.status)} />
-                  {detailTask.due_date && (
-                    <>
-                      <span className="mx-2 text-zinc-600">&bull;</span>
-                      <span className="inline-flex items-center gap-1.5 type-body-sm text-zinc-400">
-                        <Calendar size={10} />
-                        {formatShortDate(detailTask.due_date)}
-                      </span>
-                    </>
-                  )}
+                  {detailTask.due_date && (() => {
+                    const late = isTaskLate(detailTask);
+                    return (
+                      <>
+                        <span className="mx-2 text-zinc-600">&bull;</span>
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 type-body-sm",
+                          late ? "text-red-400" : "text-zinc-400"
+                        )}>
+                          <Calendar size={10} />
+                          {formatShortDate(detailTask.due_date)}
+                          {late && " — late"}
+                        </span>
+                      </>
+                    );
+                  })()}
                   {detailTask.blocked_by && (
                     <>
                       <span className="mx-2 text-zinc-600">&bull;</span>
@@ -456,12 +488,28 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
                       </span>
                     </>
                   )}
+                  {detailTask.assigned_to && (
+                    <>
+                      <span className="mx-2 text-zinc-600">&bull;</span>
+                      <span className="inline-flex items-center gap-1.5 type-body-sm text-zinc-400">
+                        {getAgentMeta(detailTask.assigned_to).label}
+                      </span>
+                    </>
+                  )}
                 </>
               ) : null}
             </SheetDescription>
           </SheetHeader>
           {detailTask && (
             <div className="space-y-5 overflow-y-auto px-4 py-4">
+              {isTaskLate(detailTask) && (
+                <div className="rounded-lg border border-red-400/20 bg-red-400/8 px-4 py-3">
+                  <p className="text-2xs font-medium uppercase tracking-[0.08em] text-red-400">Overdue</p>
+                  <p className="mt-2 type-body-sm text-zinc-200">
+                    Due {formatShortDate(detailTask.due_date)}
+                  </p>
+                </div>
+              )}
               {detailTask.blocked_by && (
                 <div className="rounded-lg border border-orange-400/20 bg-orange-400/8 px-4 py-3">
                   <p className="text-2xs font-medium uppercase tracking-[0.08em] text-orange-300/80">Waiting On</p>
@@ -477,6 +525,9 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
               </div>
 
               <div className="space-y-3 border-t border-zinc-800/50 pt-4">
+                {detailTask.assigned_to && (
+                  <TaskMetaRow label="Assigned To" value={getAgentMeta(detailTask.assigned_to).label} />
+                )}
                 <TaskMetaRow label="Updated" value={formatShortDateTime(detailTask.updated_at)} />
               </div>
             </div>

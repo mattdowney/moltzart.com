@@ -1,5 +1,17 @@
 # Project Log
 
+## 2026-03-11 (session 27)
+
+- Built Newsletter Bridge: Moltzart → OS. Per-row "Send to OS" button on newsletter article table calls `/api/newsletter/send-to-os`, which relays to OS's `/api/newsletter/links/import` with API key auth. Links land as unprocessed URL-only records in OS's "Incoming" sidebar section.
+- Added `sent_to_os` boolean column to `newsletter_articles` table (via Neon MCP). Button permanently disabled after successful send — persists across sessions.
+- Widened SortableDataTable action column (w-8 → w-24) to fit "Send to OS" + delete buttons side-by-side.
+- Extracted `AGENT_META` from calendar-view into `src/lib/agents.ts`. Added `assigned_to` field to task PATCH route.
+- **Decision:** No auth check on `/api/newsletter/send-to-os` — the page itself is behind admin auth, and the sibling delete route follows the same pattern. The relay adds its own API key for the OS-side call.
+- **Decision:** Persistent `sent_to_os` column instead of session-only state. Once a link is sent, it should never be re-sent — dedup at the source, not just the destination.
+- **Learned:** OS uses a `proxy.ts` middleware that intercepts all non-public API routes for session auth. New public-facing API routes must be added to `PUBLIC_API_PATHS` in `proxy.ts` or they'll 401 before reaching the handler.
+- **Watch:** Moltzart env vars `OS_BASE_URL` and `OS_BULK_IMPORT_KEY` need to be set on Vercel for production. Currently only in `.env.local`.
+- **Next:** Set `OS_BASE_URL` (https://os.mattdowney.com) and `OS_BULK_IMPORT_KEY` on Moltzart's Vercel env vars for production deployment.
+
 ## 2026-03-10 (session 26)
 
 - Renamed admin "Drafts" section to "Social": moved route `admin/drafts/` → `admin/social/`, renamed components (`DraftsEditionsTable` → `SocialEditionsTable`, `DraftsTable` → `SocialTable`), sidebar icon changed from `PenLine` to `MessageSquare`.

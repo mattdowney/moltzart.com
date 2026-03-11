@@ -8,6 +8,7 @@ import { Panel } from "@/components/admin/panel";
 import { Badge } from "@/components/ui/badge";
 import { getScheduledRunStatus, isHighFrequencyCron, parseCronField, cronMatchesDay, type CronRunStatus } from "@/lib/cron-health";
 import type { OpenClawCronMeta } from "@/lib/openclaw-crons";
+import { AGENT_META, getAgentMeta } from "@/lib/agents";
 
 // --- Types ---
 
@@ -96,49 +97,6 @@ function expandCron(expr: string, weekDays: string[]): CronRun[] {
 }
 
 // --- Cron expansion with run status ---
-
-const AGENT_META = {
-  moltzart: {
-    label: "Moltzart",
-    short: "MO",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  scout: {
-    label: "Scout",
-    short: "SC",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  pica: {
-    label: "Pica",
-    short: "PI",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  hawk: {
-    label: "Hawk",
-    short: "HK",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  sigmund: {
-    label: "Sigmund",
-    short: "SG",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  system: {
-    label: "Unassigned",
-    short: "UN",
-    badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
-  },
-  unknown: {
-    label: "Unknown",
-    short: "??",
-    badge: "border-zinc-700/60 bg-zinc-800/40 text-zinc-400",
-  },
-} as const;
-
-function getAgentMeta(agentId: string | null | undefined) {
-  if (!agentId) return AGENT_META.system;
-  return AGENT_META[agentId as keyof typeof AGENT_META] ?? AGENT_META.unknown;
-}
 
 function categorizeCrons(
   crons: DbCronJob[],

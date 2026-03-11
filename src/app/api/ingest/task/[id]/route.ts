@@ -18,7 +18,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { status, detail, effort, due_date, blocked_by, board_order } = body;
+  const { status, detail, effort, due_date, blocked_by, board_order, assigned_to } = body;
   const normalizedStatus = status === undefined ? undefined : normalizeTaskStatusInput(status);
   const normalizedBoardOrder = board_order === undefined ? undefined : Number(board_order);
 
@@ -29,6 +29,7 @@ export async function PATCH(
     due_date,
     blocked_by,
     board_order: Number.isFinite(normalizedBoardOrder) ? normalizedBoardOrder : undefined,
+    assigned_to,
   });
   if (!updated) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });

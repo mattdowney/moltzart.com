@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Newspaper, Trash2 } from "lucide-react";
+import { ExternalLink, Newspaper, Trash2, Send, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/admin/empty-state";
 import { PillarTag } from "@/components/admin/tag-badge";
@@ -16,6 +16,7 @@ export interface FlatArticle {
   category?: string;
   digestDate: string;
   dayLabel: string;
+  sentToOs?: boolean;
 }
 
 const columns: Column<FlatArticle>[] = [
@@ -59,8 +60,10 @@ const columns: Column<FlatArticle>[] = [
   },
 ];
 
-export function NewsletterArticlesTable({ articles: initialArticles }: { articles: FlatArticle[] }) {
+export function NewsletterArticlesTable({ articles: initialArticles, weekMonday }: { articles: FlatArticle[]; weekMonday?: string }) {
   const [articles, setArticles] = useState(initialArticles);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
 
   if (articles.length === 0) {
     return <EmptyState icon={Newspaper} message="No picks this week." />;
@@ -71,22 +74,61 @@ export function NewsletterArticlesTable({ articles: initialArticles }: { article
     await fetch(`/api/admin/newsletter/${id}`, { method: "DELETE" });
   }
 
+  async function sendToOS(article: FlatArticle) {
+    if (!weekMonday || !article.link) return;
+    setSendingId(article.id);
+    try {
+      const res = await fetch("/api/newsletter/send-to-os", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: article.id, url: article.link, title: article.title, source: article.source, weekMonday }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setSentIds((prev) => new Set(prev).add(article.id));
+    } catch {
+      // Could add error toast here
+    } finally {
+      setSendingId(null);
+    }
+  }
+
   return (
     <SortableDataTable
       columns={columns}
       rows={articles}
       rowKey={(a) => a.id}
       rowAction={(a) => (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => void deleteArticle(a.id)}
-          className="text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Delete article"
-        >
-          <Trash2 size={14} />
-        </Button>
+        <div className="flex items-center gap-3">
+          {weekMonday && a.link && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="text-zinc-400 hover:text-zinc-300"
+              onClick={() => void sendToOS(a)}
+              disabled={sendingId === a.id || sentIds.has(a.id) || a.sentToOs}
+            >
+              {sendingId === a.id ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (sentIds.has(a.id) || a.sentToOs) ? (
+                <Check size={12} className="text-green-500" />
+              ) : (
+                <Send size={12} />
+              )}
+              {(sentIds.has(a.id) || a.sentToOs) ? "Sent" : "Send to OS"}
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            className="text-zinc-400 hover:bg-destructive/10 hover:text-red-400"
+            onClick={() => void deleteArticle(a.id)}
+            title="Delete"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
       )}
     />
   );

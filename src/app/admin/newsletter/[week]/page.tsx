@@ -49,7 +49,7 @@ export default async function NewsletterWeekPage({ params }: Props) {
           basePath="/admin/newsletter"
         />
       </PageHeader>
-      <NewsletterArticlesTable articles={articles} />
+      <NewsletterArticlesTable articles={articles} weekMonday={week} />
     </div>
   );
 }
