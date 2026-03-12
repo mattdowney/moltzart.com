@@ -7,6 +7,25 @@ function checkIngestAuth(req: NextRequest): boolean {
   return auth.slice(7) === process.env.INGEST_API_KEY;
 }
 
+/** Strip tracking/referral params from URLs so the same article with different UTM tags deduplicates. */
+function normalizeLink(link: string): string {
+  try {
+    const url = new URL(link);
+    const stripParams = [
+      "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+      "ref", "source", "s", "ss", "mc_cid", "mc_eid",
+    ];
+    for (const p of stripParams) {
+      url.searchParams.delete(p);
+    }
+    // Remove empty search string
+    const clean = url.searchParams.toString();
+    return url.origin + url.pathname + (clean ? `?${clean}` : "") + url.hash;
+  } catch {
+    return link;
+  }
+}
+
 export async function POST(req: NextRequest) {
   if (!checkIngestAuth(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,6 +54,8 @@ export async function POST(req: NextRequest) {
       } catch {
         return NextResponse.json({ error: `Invalid URL in link: ${a.link}` }, { status: 400 });
       }
+      // Normalize the link before it hits the DB
+      a.link = normalizeLink(a.link);
     }
   }
 

@@ -117,9 +117,12 @@ export async function insertNewsletterArticles(
   const ids: string[] = [];
   const skipped: string[] = [];
   for (const a of articles) {
-    // Check for duplicate title across ALL dates (not just this digest)
+    // Check for duplicate: case-insensitive title match OR same normalized link
     const existing = await sql()`
-      SELECT id, digest_date FROM newsletter_articles WHERE title = ${a.title} LIMIT 1
+      SELECT id, digest_date, title FROM newsletter_articles
+      WHERE LOWER(title) = LOWER(${a.title})
+         OR (link IS NOT NULL AND ${a.link || null} IS NOT NULL AND link = ${a.link || null})
+      LIMIT 1
     `;
     if (existing.length > 0) {
       skipped.push(`"${a.title}" (already exists from ${toDateStr(existing[0].digest_date)})`);
