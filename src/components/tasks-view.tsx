@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { DbTask } from "@/lib/db";
 import {
   Calendar,
+  ChevronRight,
   CircleAlert,
   FolderOpen,
   RefreshCw,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   PlayCircle,
   ListTodo,
+  X,
 } from "lucide-react";
 import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
@@ -24,6 +26,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   TASK_BOARD_STATUSES,
   TASK_STATUS_LABELS,
   type TaskStatus,
@@ -32,7 +46,7 @@ import {
 import { EmptyState } from "@/components/admin/empty-state";
 import { cn } from "@/lib/utils";
 import { formatShortDate, formatShortDateTime } from "@/lib/date-format";
-import { getAgentMeta } from "@/lib/agents";
+import { AGENT_META, getAgentMeta, type AgentId } from "@/lib/agents";
 
 function isTaskLate(task: DbTask): boolean {
   if (!task.due_date || task.status === "done") return false;
@@ -296,6 +310,244 @@ function DropSlot({
   );
 }
 
+function getTaskDateKey(task: DbTask): string {
+  const raw = task.updated_at as unknown;
+  const d = raw instanceof Date ? raw : new Date(String(raw));
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getTodayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatDayHeader(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+}
+
+const FILTERABLE_AGENTS = Object.entries(AGENT_META)
+  .filter(([id]) => id !== "unknown" && id !== "system")
+  .map(([id, meta]) => ({ id: id as AgentId, label: meta.label }));
+
+function DoneColumn({
+  tasks,
+  dragOver,
+  draggingTaskId,
+  savingTaskId,
+  onDragOver,
+  onDrop,
+  onDragStart,
+  onDragEnd,
+  onOpenDetail,
+}: {
+  tasks: DbTask[];
+  dragOver: DragOverState;
+  draggingTaskId: string | null;
+  savingTaskId: string | null;
+  onDragOver: (status: TaskStatus, index: number) => void;
+  onDrop: (status: TaskStatus, index: number, e: React.DragEvent) => void;
+  onDragStart: (taskId: string) => void;
+  onDragEnd: () => void;
+  onOpenDetail: (taskId: string) => void;
+}) {
+  const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [olderOpen, setOlderOpen] = useState(false);
+
+  const todayKey = getTodayKey();
+
+  const filtered = useMemo(() => {
+    let result = tasks;
+    if (agentFilter !== "all") {
+      result = result.filter((t) => t.assigned_to === agentFilter);
+    }
+    if (dateFrom) {
+      result = result.filter((t) => getTaskDateKey(t) >= dateFrom);
+    }
+    if (dateTo) {
+      result = result.filter((t) => getTaskDateKey(t) <= dateTo);
+    }
+    return result;
+  }, [tasks, agentFilter, dateFrom, dateTo]);
+
+  const { todayTasks, olderTasks, olderByDay } = useMemo(() => {
+    const today: DbTask[] = [];
+    const older: DbTask[] = [];
+    for (const task of filtered) {
+      if (getTaskDateKey(task) === todayKey) {
+        today.push(task);
+      } else {
+        older.push(task);
+      }
+    }
+    const byDay = new Map<string, DbTask[]>();
+    for (const task of older) {
+      const key = getTaskDateKey(task);
+      if (!byDay.has(key)) byDay.set(key, []);
+      byDay.get(key)!.push(task);
+    }
+    const sortedByDay = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    return { todayTasks: today, olderTasks: older, olderByDay: sortedByDay };
+  }, [filtered, todayKey]);
+
+  const hasFilters = agentFilter !== "all" || dateFrom || dateTo;
+  const Icon = TASK_STATUS_META.done.icon;
+
+  function renderTaskList(taskList: DbTask[]) {
+    return taskList.map((task) => {
+      const globalIndex = tasks.indexOf(task);
+      const index = globalIndex >= 0 ? globalIndex : 0;
+      return (
+        <div key={task.id} className="space-y-1">
+          <DropSlot
+            active={dragOver?.status === "done" && dragOver.index === index}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (draggingTaskId) onDragOver("done", index);
+            }}
+            onDrop={(e) => onDrop("done", index, e)}
+          />
+          <TaskCard
+            task={task}
+            saving={savingTaskId === task.id}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onOpenDetail={onOpenDetail}
+          />
+        </div>
+      );
+    });
+  }
+
+  return (
+    <div
+      className="flex h-full min-h-0 flex-col rounded-xl border border-zinc-800/50 bg-zinc-950/50"
+      onDragOver={(e) => e.preventDefault()}
+    >
+      <div className="border-b border-zinc-800/40 px-3 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Icon size={15} className={cn("shrink-0", TASK_STATUS_META.done.tone)} />
+            <span className="type-body-sm font-medium text-zinc-100">{TASK_STATUS_LABELS.done}</span>
+          </div>
+          <span className="type-body-sm text-zinc-500">{filtered.length}</span>
+        </div>
+        <p className="mt-2 type-body-sm text-zinc-500">
+          {TASK_STATUS_META.done.description}
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="border-b border-zinc-800/40 px-3 py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger size="sm" className="h-7 text-xs border-zinc-800 bg-zinc-900/60 text-zinc-300 w-auto min-w-[5.5rem]">
+              <SelectValue placeholder="Agent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All agents</SelectItem>
+              {FILTERABLE_AGENTS.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            placeholder="From"
+            className="h-7 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 text-xs text-zinc-300 outline-none focus-visible:border-zinc-600 w-[7.5rem]"
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            placeholder="To"
+            className="h-7 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 text-xs text-zinc-300 outline-none focus-visible:border-zinc-600 w-[7.5rem]"
+          />
+          {hasFilters && (
+            <button
+              onClick={() => { setAgentFilter("all"); setDateFrom(""); setDateTo(""); }}
+              className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <X size={12} className="shrink-0" />
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="p-2 space-y-1 min-h-0 overflow-y-auto">
+        {/* Done Today */}
+        {todayTasks.length > 0 && (
+          <div>
+            <div className="px-1 py-1.5">
+              <span className="text-2xs font-medium uppercase tracking-[0.08em] text-emerald-400/70">
+                Done Today
+              </span>
+            </div>
+            {renderTaskList(todayTasks)}
+          </div>
+        )}
+
+        {/* Older */}
+        {olderTasks.length > 0 && (
+          <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-1 py-1.5 group cursor-pointer">
+              <ChevronRight
+                size={12}
+                className={cn(
+                  "shrink-0 text-zinc-500 transition-transform duration-200",
+                  olderOpen && "rotate-90"
+                )}
+              />
+              <span className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                Older
+              </span>
+              <Badge variant="outline" shape="pill" className="border-zinc-800/80 bg-zinc-900/60 text-zinc-500 text-2xs px-1.5 py-0">
+                {olderTasks.length}
+              </Badge>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              {olderByDay.map(([dateKey, dayTasks]) => (
+                <div key={dateKey}>
+                  <div className="px-1 py-1.5 mt-1">
+                    <span className="text-2xs font-medium text-zinc-600">
+                      {formatDayHeader(dateKey)}
+                    </span>
+                  </div>
+                  {renderTaskList(dayTasks)}
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {filtered.length === 0 && (
+          <div className="py-6 text-center">
+            <p className="type-body-sm text-zinc-600">
+              {hasFilters ? "No tasks match filters." : "No completed tasks."}
+            </p>
+          </div>
+        )}
+
+        <DropSlot
+          active={dragOver?.status === "done" && dragOver.index === tasks.length}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (draggingTaskId) onDragOver("done", tasks.length);
+          }}
+          onDrop={(e) => onDrop("done", tasks.length, e)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function TasksView({ initialData }: { initialData: DbTask[] }) {
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
@@ -392,6 +644,28 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
         <div className="flex-1 min-h-0 overflow-x-auto p-3">
           <div className="grid h-full min-w-[840px] grid-cols-3 gap-3">
             {VISIBLE_TASK_BOARD_STATUSES.map((status) => {
+              if (status === "done") {
+                return (
+                  <DoneColumn
+                    key="done"
+                    tasks={columns.done}
+                    dragOver={dragOver}
+                    draggingTaskId={draggingTaskId}
+                    savingTaskId={savingTaskId}
+                    onDragOver={(s, i) => setDragOver({ status: s, index: i })}
+                    onDrop={handleDrop}
+                    onDragStart={(taskId) => {
+                      setDraggingTaskId(taskId);
+                      setError("");
+                    }}
+                    onDragEnd={() => {
+                      setDraggingTaskId(null);
+                      setDragOver(null);
+                    }}
+                    onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                  />
+                );
+              }
               const tasks = columns[status];
               const Icon = TASK_STATUS_META[status].icon;
               return (
