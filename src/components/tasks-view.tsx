@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -363,8 +363,8 @@ function DoneColumn({
   onOpenDetail: (taskId: string) => void;
 }) {
   const [agentFilter, setAgentFilter] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [olderOpen, setOlderOpen] = useState(false);
 
   const todayKey = getTodayKey();
@@ -375,10 +375,12 @@ function DoneColumn({
       result = result.filter((t) => t.assigned_to === agentFilter);
     }
     if (dateFrom) {
-      result = result.filter((t) => getTaskDateKey(t) >= dateFrom);
+      const fromKey = `${dateFrom.getFullYear()}-${String(dateFrom.getMonth() + 1).padStart(2, "0")}-${String(dateFrom.getDate()).padStart(2, "0")}`;
+      result = result.filter((t) => getTaskDateKey(t) >= fromKey);
     }
     if (dateTo) {
-      result = result.filter((t) => getTaskDateKey(t) <= dateTo);
+      const toKey = `${dateTo.getFullYear()}-${String(dateTo.getMonth() + 1).padStart(2, "0")}-${String(dateTo.getDate()).padStart(2, "0")}`;
+      result = result.filter((t) => getTaskDateKey(t) <= toKey);
     }
     return result;
   }, [tasks, agentFilter, dateFrom, dateTo]);
@@ -403,7 +405,7 @@ function DoneColumn({
     return { todayTasks: today, olderTasks: older, olderByDay: sortedByDay };
   }, [filtered, todayKey]);
 
-  const hasFilters = agentFilter !== "all" || dateFrom || dateTo;
+  const hasFilters = agentFilter !== "all" || dateFrom !== undefined || dateTo !== undefined;
   const Icon = TASK_STATUS_META.done.icon;
 
   function renderTaskList(taskList: DbTask[]) {
@@ -458,29 +460,25 @@ function DoneColumn({
               <SelectValue placeholder="Agent" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All agents</SelectItem>
+              <SelectItem value="all">Everyone</SelectItem>
               {FILTERABLE_AGENTS.map((a) => (
                 <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Input
-            type="date"
+          <DatePicker
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            onChange={setDateFrom}
             placeholder="From"
-            className="h-8 w-[7.5rem] text-xs"
           />
-          <Input
-            type="date"
+          <DatePicker
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            onChange={setDateTo}
             placeholder="To"
-            className="h-8 w-[7.5rem] text-xs"
           />
           {hasFilters && (
             <button
-              onClick={() => { setAgentFilter("all"); setDateFrom(""); setDateTo(""); }}
+              onClick={() => { setAgentFilter("all"); setDateFrom(undefined); setDateTo(undefined); }}
               className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               <X size={12} className="shrink-0" />
