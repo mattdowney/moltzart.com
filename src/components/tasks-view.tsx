@@ -46,7 +46,7 @@ import {
 import { EmptyState } from "@/components/admin/empty-state";
 import { cn } from "@/lib/utils";
 import { formatShortDate, formatShortDateTime } from "@/lib/date-format";
-import { AGENT_META, getAgentMeta, type AgentId } from "@/lib/agents";
+import { AGENT_META, getAgentMeta, getGlowColor, type AgentId } from "@/lib/agents";
 
 function isTaskLate(task: DbTask): boolean {
   if (!task.due_date || task.status === "done") return false;
@@ -221,9 +221,22 @@ function TaskCard({
   onOpenDetail: (taskId: string) => void;
 }) {
   const isDone = task.status === "done";
+  const isWorking = task.status === "in_progress" && task.working;
   const late = isTaskLate(task);
   const canOpenDetail = true;
   const showMeta = Boolean(task.due_date) || Boolean(task.blocked_by) || Boolean(task.assigned_to);
+
+  const glowStyle = isWorking
+    ? (() => {
+        const agent = getAgentMeta(task.assigned_to);
+        const rgb = getGlowColor(agent.glow);
+        return {
+          "--glow-color": rgb.replace(")", " / 0.25)").replace("rgb(", "rgba("),
+          "--glow-color-border": rgb.replace(")", " / 0.3)").replace("rgb(", "rgba("),
+          "--glow-color-mid": rgb.replace(")", " / 0.5)").replace("rgb(", "rgba("),
+        } as React.CSSProperties;
+      })()
+    : undefined;
 
   return (
     <div
@@ -240,11 +253,12 @@ function TaskCard({
         if (canOpenDetail) onOpenDetail(task.id);
       }}
       tabIndex={0}
-      className={`group rounded-lg border border-zinc-800/60 bg-zinc-900/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 ${
-        "p-2"
-      } ${
-        saving ? "opacity-60" : "cursor-grab active:cursor-grabbing"
-      }`}
+      style={glowStyle}
+      className={cn(
+        "group rounded-lg border border-zinc-800/60 bg-zinc-900/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 p-2",
+        saving ? "opacity-60" : "cursor-grab active:cursor-grabbing",
+        isWorking && "task-glow"
+      )}
       aria-label={`Task ${task.title}. Drag to move.`}
     >
       <div className="flex items-start gap-2">

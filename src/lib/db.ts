@@ -63,6 +63,7 @@ function toJsonArrayOrNull(v: unknown): unknown[] | null {
 
 interface TaskSchemaCapabilities {
   hasBoardOrder: boolean;
+  hasWorking: boolean;
 }
 
 let _taskSchemaCapabilities: TaskSchemaCapabilities | null = null;
@@ -71,17 +72,26 @@ async function getTaskSchemaCapabilities(): Promise<TaskSchemaCapabilities> {
   if (_taskSchemaCapabilities) return _taskSchemaCapabilities;
 
   const rows = await sql()`
-    SELECT EXISTS (
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'tasks'
-        AND column_name = 'board_order'
-    ) AS has_board_order
+    SELECT
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tasks'
+          AND column_name = 'board_order'
+      ) AS has_board_order,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tasks'
+          AND column_name = 'working'
+      ) AS has_working
   `;
 
   _taskSchemaCapabilities = {
     hasBoardOrder: Boolean(rows[0]?.has_board_order),
+    hasWorking: Boolean(rows[0]?.has_working),
   };
   return _taskSchemaCapabilities;
 }
@@ -178,6 +188,7 @@ export interface DbTask {
   blocked_by: string | null;
   assigned_to: string | null;
   board_order: number;
+  working: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -218,6 +229,7 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
     ...r,
     status: normalizeTaskStatusInput(r.status),
     board_order: toNumberOr(r.board_order, 1),
+    working: Boolean(r.working),
     due_date: r.due_date ? toDateStr(r.due_date) : null,
     created_at: toDateTimeStr(r.created_at),
     updated_at: toDateTimeStr(r.updated_at),
@@ -258,6 +270,7 @@ export async function fetchTasksByStatus(status?: string): Promise<DbTask[]> {
     ...r,
     status: normalizeTaskStatusInput(r.status),
     board_order: toNumberOr(r.board_order, 1),
+    working: Boolean(r.working),
     due_date: r.due_date ? toDateStr(r.due_date) : null,
     created_at: toDateTimeStr(r.created_at),
     updated_at: toDateTimeStr(r.updated_at),
@@ -292,7 +305,7 @@ export async function insertTask(
 
 export async function updateTask(
   id: string,
-  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "effort" | "due_date" | "blocked_by" | "board_order" | "assigned_to">>
+  fields: Partial<Pick<DbTask, "title" | "detail" | "status" | "effort" | "due_date" | "blocked_by" | "board_order" | "assigned_to" | "working">>
 ): Promise<boolean> {
   const capabilities = await getTaskSchemaCapabilities();
   const normalizedStatus = fields.status === undefined
@@ -309,6 +322,7 @@ export async function updateTask(
         fields.blocked_by,
         fields.board_order,
         fields.assigned_to,
+        ...(capabilities.hasWorking ? [fields.working] : []),
       ].some((v) => v !== undefined)
     : [
     fields.title,
@@ -323,20 +337,36 @@ export async function updateTask(
   if (!hasUpdates) return false;
 
   const rows = capabilities.hasBoardOrder
-    ? await sql()`
-        UPDATE tasks SET
-          title = COALESCE(${fields.title ?? null}::text, title),
-          detail = COALESCE(${fields.detail ?? null}::text, detail),
-          status = COALESCE(${normalizedStatus ?? null}::text, status),
-          effort = COALESCE(${fields.effort ?? null}::text, effort),
-          due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
-          blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
-          board_order = COALESCE(${fields.board_order ?? null}::double precision, board_order),
-          assigned_to = COALESCE(${fields.assigned_to ?? null}::text, assigned_to),
-          updated_at = now()
-        WHERE id = ${id}
-        RETURNING id
-      `
+    ? capabilities.hasWorking
+      ? await sql()`
+          UPDATE tasks SET
+            title = COALESCE(${fields.title ?? null}::text, title),
+            detail = COALESCE(${fields.detail ?? null}::text, detail),
+            status = COALESCE(${normalizedStatus ?? null}::text, status),
+            effort = COALESCE(${fields.effort ?? null}::text, effort),
+            due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
+            blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
+            board_order = COALESCE(${fields.board_order ?? null}::double precision, board_order),
+            assigned_to = COALESCE(${fields.assigned_to ?? null}::text, assigned_to),
+            working = COALESCE(${fields.working ?? null}::boolean, working),
+            updated_at = now()
+          WHERE id = ${id}
+          RETURNING id
+        `
+      : await sql()`
+          UPDATE tasks SET
+            title = COALESCE(${fields.title ?? null}::text, title),
+            detail = COALESCE(${fields.detail ?? null}::text, detail),
+            status = COALESCE(${normalizedStatus ?? null}::text, status),
+            effort = COALESCE(${fields.effort ?? null}::text, effort),
+            due_date = COALESCE(${fields.due_date ?? null}::date, due_date),
+            blocked_by = COALESCE(${fields.blocked_by ?? null}::text, blocked_by),
+            board_order = COALESCE(${fields.board_order ?? null}::double precision, board_order),
+            assigned_to = COALESCE(${fields.assigned_to ?? null}::text, assigned_to),
+            updated_at = now()
+          WHERE id = ${id}
+          RETURNING id
+        `
     : await sql()`
         UPDATE tasks SET
           title = COALESCE(${fields.title ?? null}::text, title),
