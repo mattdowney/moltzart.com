@@ -675,13 +675,13 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
         title={
           <span className="inline-flex items-center gap-2.5">
             Tasks
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
-              <span className="relative flex h-1.5 w-1.5">
+            <Badge variant="status" shape="pill" size="compact" className="bg-emerald-400/10 text-emerald-400 border-emerald-400/20">
+              <span className="relative flex size-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
               </span>
               Live
-            </span>
+            </Badge>
           </span>
         }
         subtitle="Move work across todo, active execution, and completed follow-through."
