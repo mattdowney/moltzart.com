@@ -489,7 +489,7 @@ function DoneColumn({
         </div>
       </div>
 
-      <div className="p-2 space-y-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Done Today */}
         {todayTasks.length > 0 && (
           <div>
@@ -500,39 +500,6 @@ function DoneColumn({
             </div>
             {renderTaskList(todayTasks)}
           </div>
-        )}
-
-        {/* Older */}
-        {olderTasks.length > 0 && (
-          <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
-            <CollapsibleTrigger className="flex w-full items-center gap-2 px-1 py-1.5 group cursor-pointer">
-              <ChevronRight
-                size={12}
-                className={cn(
-                  "shrink-0 text-zinc-500 transition-transform duration-200",
-                  olderOpen && "rotate-90"
-                )}
-              />
-              <span className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                Older
-              </span>
-              <Badge variant="outline" shape="pill" className="border-zinc-800/80 bg-zinc-900/60 text-zinc-500 text-2xs px-1.5 py-0">
-                {olderTasks.length}
-              </Badge>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              {olderByDay.map(([dateKey, dayTasks]) => (
-                <div key={dateKey}>
-                  <div className="px-1 py-1.5 mt-1">
-                    <span className="text-2xs font-medium text-zinc-600">
-                      {formatDayHeader(dateKey)}
-                    </span>
-                  </div>
-                  {renderTaskList(dayTasks)}
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
         )}
 
         {filtered.length === 0 && (
@@ -552,6 +519,43 @@ function DoneColumn({
           onDrop={(e) => onDrop("done", tasks.length, e)}
         />
       </div>
+
+      {/* Older — pinned at bottom, outside scroll */}
+      {olderTasks.length > 0 && (
+        <div className="border-t border-zinc-800/40 px-2 py-1">
+          <Collapsible open={olderOpen} onOpenChange={setOlderOpen}>
+            <CollapsibleTrigger className="flex w-full items-center gap-2 px-1 py-1.5 group cursor-pointer">
+              <ChevronRight
+                size={12}
+                className={cn(
+                  "shrink-0 text-zinc-500 transition-transform duration-200",
+                  olderOpen && "rotate-90"
+                )}
+              />
+              <span className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                Older
+              </span>
+              <Badge variant="outline" shape="pill" className="border-zinc-800/80 bg-zinc-900/60 text-zinc-500 text-2xs px-1.5 py-0">
+                {olderTasks.length}
+              </Badge>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="max-h-48 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {olderByDay.map(([dateKey, dayTasks]) => (
+                  <div key={dateKey}>
+                    <div className="px-1 py-1.5 mt-1">
+                      <span className="text-2xs font-medium text-zinc-600">
+                        {formatDayHeader(dateKey)}
+                      </span>
+                    </div>
+                    {renderTaskList(dayTasks)}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
     </div>
   );
 }
@@ -734,7 +738,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
                       {TASK_STATUS_META[status].description}
                     </p>
                   </div>
-                  <div className="p-2 space-y-1 min-h-0 overflow-y-auto">
+                  <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {tasks.map((task, index) => (
                       <div key={task.id} className="space-y-1">
                         <DropSlot
