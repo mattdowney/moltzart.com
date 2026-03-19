@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DbTask } from "@/lib/db";
 import {
   Calendar,
@@ -605,7 +605,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
     void applyMove(draggingTaskId, status, index);
   }
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/tasks", {
@@ -619,12 +619,63 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
       }
     } catch {}
     setLoading(false);
-  };
+  }, []);
+
+  // Auto-poll every 10s, pausing when tab is hidden or drag is in progress
+  const draggingRef = useRef(draggingTaskId);
+  draggingRef.current = draggingTaskId;
+
+  useEffect(() => {
+    const POLL_MS = 10_000;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    function startPolling() {
+      stopPolling();
+      timer = setInterval(() => {
+        if (!draggingRef.current) refresh();
+      }, POLL_MS);
+    }
+
+    function stopPolling() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function handleVisibility() {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        if (!draggingRef.current) refresh();
+        startPolling();
+      }
+    }
+
+    startPolling();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refresh]);
 
   return (
     <div className="space-y-4">
       <AdminPageIntro
-        title="Tasks"
+        title={
+          <span className="inline-flex items-center gap-2.5">
+            Tasks
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              Live
+            </span>
+          </span>
+        }
         subtitle="Move work across todo, active execution, and completed follow-through."
       />
 

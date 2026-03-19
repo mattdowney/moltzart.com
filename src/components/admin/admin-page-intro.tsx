@@ -11,7 +11,7 @@ interface BreadcrumbItem {
 type DividerTone = "none" | "soft" | "default";
 
 interface AdminPageIntroProps {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   breadcrumbs?: BreadcrumbItem[];
   meta?: React.ReactNode;
