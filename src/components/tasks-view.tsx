@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -453,7 +454,7 @@ function DoneColumn({
       <div className="border-b border-zinc-800/40 px-3 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger size="sm" className="h-7 text-xs border-zinc-800 bg-zinc-900/60 text-zinc-300 w-auto min-w-[5.5rem]">
+            <SelectTrigger size="sm" className="w-auto min-w-[5.5rem] text-xs">
               <SelectValue placeholder="Agent" />
             </SelectTrigger>
             <SelectContent>
@@ -463,19 +464,19 @@ function DoneColumn({
               ))}
             </SelectContent>
           </Select>
-          <input
+          <Input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             placeholder="From"
-            className="h-7 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 text-xs text-zinc-300 outline-none focus-visible:border-zinc-600 w-[7.5rem]"
+            className="h-8 w-[7.5rem] text-xs"
           />
-          <input
+          <Input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             placeholder="To"
-            className="h-7 rounded-md border border-zinc-800 bg-zinc-900/60 px-2 text-xs text-zinc-300 outline-none focus-visible:border-zinc-600 w-[7.5rem]"
+            className="h-8 w-[7.5rem] text-xs"
           />
           {hasFilters && (
             <button
@@ -495,7 +496,7 @@ function DoneColumn({
           <div className="flex-1 min-h-0 flex flex-col">
             <div className="px-1 py-1.5 shrink-0">
               <span className="text-2xs font-medium uppercase tracking-[0.08em] text-emerald-400/70">
-                Done Today
+                Today
               </span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
