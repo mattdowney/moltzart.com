@@ -29,6 +29,11 @@ export const AGENT_META = {
     short: "SG",
     badge: "border-zinc-700/60 bg-zinc-900/60 text-zinc-300",
   },
+  finch: {
+    label: "Finch",
+    short: "FI",
+    badge: "border-amber-400/20 bg-amber-400/10 text-amber-400",
+  },
   system: {
     label: "Unassigned",
     short: "UN",
