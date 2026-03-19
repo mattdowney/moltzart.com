@@ -672,18 +672,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
   return (
     <div className="space-y-4">
       <AdminPageIntro
-        title={
-          <span className="inline-flex items-center gap-2.5">
-            Tasks
-            <Badge variant="status" shape="pill" size="compact" className="bg-emerald-400/10 text-emerald-400 border-emerald-400/20">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
-              </span>
-              Live
-            </Badge>
-          </span>
-        }
+        title="Tasks"
         subtitle="Move work across todo, active execution, and completed follow-through."
       />
 
