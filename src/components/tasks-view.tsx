@@ -222,8 +222,8 @@ function TaskCard({
 }) {
   const isDone = task.status === "done";
   const late = isTaskLate(task);
-  const canOpenDetail = !isDone;
-  const showMeta = !isDone && (Boolean(task.due_date) || Boolean(task.blocked_by) || Boolean(task.assigned_to));
+  const canOpenDetail = true;
+  const showMeta = Boolean(task.due_date) || Boolean(task.blocked_by) || Boolean(task.assigned_to);
 
   return (
     <div
