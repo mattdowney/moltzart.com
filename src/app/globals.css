@@ -168,19 +168,40 @@ html {
   }
 }
 
-@keyframes task-glow {
-  0%, 100% {
-    box-shadow: 0 0 4px 0 var(--glow-color, transparent), 0 0 0 1px var(--glow-color-border, transparent);
-    border-color: var(--glow-color-border, transparent);
-  }
-  50% {
-    box-shadow: 0 0 12px 2px var(--glow-color, transparent), 0 0 0 1px var(--glow-color-mid, transparent);
-    border-color: var(--glow-color-mid, transparent);
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotate-border {
+  to {
+    --border-angle: 360deg;
   }
 }
 
 .task-glow {
-  animation: task-glow 3s ease-in-out infinite;
+  position: relative;
+  border-color: transparent !important;
+}
+
+.task-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 50%,
+    var(--glow-color-solid, rgb(161 161 170)) 80%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rotate-border 2.5s linear infinite;
+  pointer-events: none;
 }
 
 @layer components {

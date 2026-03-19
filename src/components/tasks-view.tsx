@@ -227,15 +227,9 @@ function TaskCard({
   const showMeta = Boolean(task.due_date) || Boolean(task.blocked_by) || Boolean(task.assigned_to);
 
   const glowStyle = isWorking
-    ? (() => {
-        const agent = getAgentMeta(task.assigned_to);
-        const rgb = getGlowColor(agent.glow);
-        return {
-          "--glow-color": rgb.replace(")", " / 0.25)").replace("rgb(", "rgba("),
-          "--glow-color-border": rgb.replace(")", " / 0.3)").replace("rgb(", "rgba("),
-          "--glow-color-mid": rgb.replace(")", " / 0.5)").replace("rgb(", "rgba("),
-        } as React.CSSProperties;
-      })()
+    ? ({
+        "--glow-color-solid": getGlowColor(getAgentMeta(task.assigned_to).glow),
+      } as React.CSSProperties)
     : undefined;
 
   return (
