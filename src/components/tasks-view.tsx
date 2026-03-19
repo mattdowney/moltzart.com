@@ -489,16 +489,18 @@ function DoneColumn({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex-1 min-h-0 flex flex-col p-2">
         {/* Done Today */}
         {todayTasks.length > 0 && (
-          <div>
-            <div className="px-1 py-1.5">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="px-1 py-1.5 shrink-0">
               <span className="text-2xs font-medium uppercase tracking-[0.08em] text-emerald-400/70">
                 Done Today
               </span>
             </div>
-            {renderTaskList(todayTasks)}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {renderTaskList(todayTasks)}
+            </div>
           </div>
         )}
 
@@ -510,14 +512,16 @@ function DoneColumn({
           </div>
         )}
 
-        <DropSlot
-          active={dragOver?.status === "done" && dragOver.index === tasks.length}
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (draggingTaskId) onDragOver("done", tasks.length);
-          }}
-          onDrop={(e) => onDrop("done", tasks.length, e)}
-        />
+        <div className="shrink-0">
+          <DropSlot
+            active={dragOver?.status === "done" && dragOver.index === tasks.length}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (draggingTaskId) onDragOver("done", tasks.length);
+            }}
+            onDrop={(e) => onDrop("done", tasks.length, e)}
+          />
+        </div>
       </div>
 
       {/* Older — pinned at bottom, outside scroll */}
