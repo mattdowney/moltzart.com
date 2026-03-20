@@ -214,14 +214,17 @@ function TaskCard({
   onDragStart,
   onDragEnd,
   onOpenDetail,
+  onMarkDone,
 }: {
   task: DbTask;
   saving: boolean;
   onDragStart: (taskId: string) => void;
   onDragEnd: () => void;
   onOpenDetail: (taskId: string) => void;
+  onMarkDone?: () => void;
 }) {
   const isDone = task.status === "done";
+  const isMattTask = task.assigned_to === "matt";
   const isWorking = task.status === "in_progress" && task.working;
   const late = isTaskLate(task);
   const canOpenDetail = true;
@@ -235,9 +238,9 @@ function TaskCard({
 
   return (
     <div
-      draggable={!saving}
-      onDragStart={() => onDragStart(task.id)}
-      onDragEnd={onDragEnd}
+      draggable={!saving && isMattTask}
+      onDragStart={isMattTask ? () => onDragStart(task.id) : undefined}
+      onDragEnd={isMattTask ? onDragEnd : undefined}
       onKeyDown={(e) => {
         if ((e.key === "Enter" || e.key === " ") && canOpenDetail) {
           e.preventDefault();
@@ -251,13 +254,15 @@ function TaskCard({
       style={glowStyle}
       className={cn(
         "group rounded-lg border border-zinc-800/60 bg-zinc-900/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 p-2",
-        saving ? "opacity-60" : "cursor-grab active:cursor-grabbing",
+        saving ? "opacity-60" : isMattTask ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         isWorking && "task-glow"
       )}
-      aria-label={`Task ${task.title}. Drag to move.`}
+      aria-label={`Task ${task.title}.${isMattTask ? " Drag to move." : ""}`}
     >
       <div className="flex items-start gap-2">
-        <GripVertical size={14} className={`${isDone ? "mt-0" : "mt-1"} text-zinc-600 shrink-0`} />
+        {isMattTask && (
+          <GripVertical size={14} className={`${isDone ? "mt-0" : "mt-1"} text-zinc-600 shrink-0`} />
+        )}
         <div className="min-w-0 flex-1">
           <p className={`type-body-sm ${isDone ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
             {task.title}
@@ -296,6 +301,18 @@ function TaskCard({
             </div>
           )}
         </div>
+        {isMattTask && !isDone && onMarkDone && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkDone();
+            }}
+            title="Mark done"
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 rounded p-0.5 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-400/10"
+          >
+            <CheckCircle2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -351,6 +368,7 @@ function DoneColumn({
   onDragStart,
   onDragEnd,
   onOpenDetail,
+  onMarkDone,
 }: {
   tasks: DbTask[];
   dragOver: DragOverState;
@@ -361,6 +379,7 @@ function DoneColumn({
   onDragStart: (taskId: string) => void;
   onDragEnd: () => void;
   onOpenDetail: (taskId: string) => void;
+  onMarkDone: (taskId: string) => void;
 }) {
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
@@ -428,6 +447,7 @@ function DoneColumn({
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onOpenDetail={onOpenDetail}
+            onMarkDone={() => onMarkDone(task.id)}
           />
         </div>
       );
@@ -589,6 +609,20 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
     if (!res.ok) {
       throw new Error("Failed to persist move");
     }
+
+    // If moved to done and assigned to matt, also PATCH the ingest API to clear working flag
+    if (task.status === "done" && task.assigned_to === "matt") {
+      await fetch(`https://moltzart.com/api/ingest/task/${task.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer moltz-ingest-a7f3e2d1b9c4",
+        },
+        body: JSON.stringify({ status: "done", working: false }),
+      }).catch(() => {
+        // Non-fatal: ingest sync failure shouldn't block UI
+      });
+    }
   }
 
   async function applyMove(taskId: string, toStatus: TaskStatus, toIndex: number) {
@@ -718,6 +752,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
                       setDragOver(null);
                     }}
                     onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                    onMarkDone={(taskId) => void applyMove(taskId, "done", columns.done.length)}
                   />
                 );
               }
@@ -764,6 +799,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
                             setDragOver(null);
                           }}
                           onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                          onMarkDone={() => void applyMove(task.id, "done", columns.done.length)}
                         />
                       </div>
                     ))}
