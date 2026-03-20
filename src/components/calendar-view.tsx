@@ -276,7 +276,7 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <span className="type-badge text-zinc-600 shrink-0">Agents</span>
-          {(["moltzart", "scout", "pica", "hawk", "sigmund"] as const).map((agentKey) => {
+          {(["moltzart", "scout", "pica", "hawk", "sigmund", "finch"] as const).map((agentKey) => {
             const agent = AGENT_META[agentKey];
             return (
               <Badge
