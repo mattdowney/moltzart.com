@@ -105,9 +105,7 @@ function categorizeCrons(
   weekDays: string[]
 ): { scheduled: Map<string, DayEvent[]> } {
   const scheduled = new Map<string, DayEvent[]>();
-  const todayStr = fmtDate(new Date());
-  const nowH = new Date().getHours();
-  const nowM = new Date().getMinutes();
+  const nowUtc = new Date();
 
   // Index job runs by job_id + date for quick lookup
   const runIndex = new Map<string, DbJobRun[]>();
@@ -137,7 +135,8 @@ function categorizeCrons(
         dateKey: run.dateKey,
         hour: run.hour,
         minute: run.minute,
-        now: new Date(`${todayStr}T${String(nowH).padStart(2, "0")}:${String(nowM).padStart(2, "0")}:00`),
+        now: nowUtc,
+        tz: job.schedule_tz,
       });
 
       scheduled.get(run.dateKey)!.push({

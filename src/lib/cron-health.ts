@@ -69,8 +69,14 @@ function sameDateKey(iso: string | null | undefined, dateKey: string): boolean {
   return Boolean(iso && iso.slice(0, 10) === dateKey);
 }
 
-function isoForLocalDateTime(dateKey: string, hour: number, minute: number): Date {
-  return new Date(`${dateKey}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`);
+function scheduledTimeToUtc(dateKey: string, hour: number, minute: number, tz?: string): Date {
+  const isoStr = `${dateKey}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+  if (!tz) return new Date(isoStr);
+  const utcDate = new Date(isoStr + "Z");
+  const utcStr = utcDate.toLocaleString("en-US", { timeZone: "UTC" });
+  const tzStr = utcDate.toLocaleString("en-US", { timeZone: tz });
+  const offsetMs = new Date(tzStr).getTime() - new Date(utcStr).getTime();
+  return new Date(utcDate.getTime() - offsetMs);
 }
 
 export function getScheduledRunStatus(args: {
@@ -80,10 +86,11 @@ export function getScheduledRunStatus(args: {
   hour: number;
   minute: number;
   now?: Date;
+  tz?: string;
 }): { status: CronRunStatus; summary?: string } {
   const now = args.now ?? new Date();
   const todayKey = now.toISOString().slice(0, 10);
-  const scheduledAt = isoForLocalDateTime(args.dateKey, args.hour, args.minute);
+  const scheduledAt = scheduledTimeToUtc(args.dateKey, args.hour, args.minute, args.tz || args.job.schedule_tz);
   const graceThreshold = scheduledAt.getTime() + TODAY_MISS_GRACE_MINUTES * 60_000;
 
   if (scheduledAt.getTime() > now.getTime()) {
