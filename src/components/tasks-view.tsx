@@ -235,7 +235,7 @@ function TaskCard({
   const glowStyle = isWorking
     ? ({
         "--glow-color-solid": getGlowColor(getAgentMeta(task.assigned_to).glow),
-        "--glow-delay": `${(glowIndex ?? 0) * 0.8}s`,
+        "--glow-delay": `${((glowIndex ?? 0) * 0.8) + (task.id.charCodeAt(0) % 5) * 0.4}s`,
       } as React.CSSProperties)
     : undefined;
 
