@@ -72,11 +72,12 @@ function DateRangePicker({
           selected={value}
           onSelect={(range) => {
             onChange(range)
-            // Close only once a full range is selected
+            // Close only once a full range is selected (from AND to are distinct)
             if (range?.from && range?.to) {
               setOpen(false)
             }
           }}
+          min={1}
           initialFocus
           numberOfMonths={1}
         />
