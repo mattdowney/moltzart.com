@@ -39,7 +39,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <Sidebar collapsible="none" className="min-h-svh border-r border-sidebar-border/80 bg-sidebar">
+    <Sidebar collapsible="offcanvas" className="min-h-svh border-r border-sidebar-border/80 bg-sidebar">
       <SidebarHeader className="px-4 pt-5 pb-3">
         <Link href="/" prefetch={false}>
           <Image
