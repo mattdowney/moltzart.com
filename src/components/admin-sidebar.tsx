@@ -19,7 +19,7 @@ import { SidebarNav, type SidebarNavItem } from "@/components/admin/sidebar-nav"
 const navItems: SidebarNavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Tasks", href: "/admin/tasks", icon: CheckSquare },
-  { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },
+  { label: "Crons", href: "/admin/calendar", icon: CalendarDays },
   { label: "Projects", href: "/admin/projects", icon: Briefcase },
   { label: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
   { label: "Social", href: "/admin/social", icon: MessageSquare },

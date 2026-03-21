@@ -246,7 +246,7 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
   return (
     <div className="space-y-4">
       <AdminPageIntro
-        title="Calendar"
+        title="Crons"
         actions={
           <>
             <button

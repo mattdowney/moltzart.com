@@ -266,7 +266,7 @@ export default function SpacingPage() {
           <div>
             <p className="type-body-sm font-medium text-zinc-200 mb-2">divider=&quot;soft&quot;</p>
             <div className="rounded-lg border border-zinc-800/50 bg-zinc-950/60 p-6">
-              <AdminPageIntro title="Calendar" subtitle="Agent accountability view" divider="soft" />
+              <AdminPageIntro title="Crons" subtitle="Agent accountability view" divider="soft" />
             </div>
           </div>
         </div>
