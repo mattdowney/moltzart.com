@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { fetchNewsletterWeek, fetchNewsletterWeekStarts } from "@/lib/db";
-import { getWeekBounds, formatWeekLabel } from "@/lib/newsletter-weeks";
+import { getWeekBounds, formatWeekLabel, mergeWeekLists } from "@/lib/newsletter-weeks";
 import { PageHeader } from "@/components/admin/page-header";
 import { WeekSelector } from "@/components/week-selector";
 import { NewsletterArticlesTable } from "@/components/newsletter-view";
@@ -20,10 +20,13 @@ export default async function NewsletterWeekPage({ params }: Props) {
   }
 
   const { start, end } = getWeekBounds(week);
-  const [digests, availableWeeks] = await Promise.all([
+  const [digests, dbWeeks] = await Promise.all([
     fetchNewsletterWeek(start, end),
     fetchNewsletterWeekStarts(),
   ]);
+  // Always include surrounding weeks so the dropdown is never empty,
+  // even when viewing a week with no newsletter data yet.
+  const availableWeeks = mergeWeekLists(dbWeeks, week);
 
   // Flatten digests into a single article array with day info attached
   const articles = digests.flatMap((d) =>

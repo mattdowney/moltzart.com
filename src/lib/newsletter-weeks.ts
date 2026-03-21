@@ -20,9 +20,48 @@ export function getWeekBounds(monday: string): { start: string; end: string } {
   return { start, end: d.toISOString().slice(0, 10) };
 }
 
-/** Returns the Monday of the current week. */
+/**
+ * Returns the current date as an ISO string in America/New_York timezone.
+ * Avoids UTC rollover causing the wrong week on late evenings.
+ */
+function getTodayET(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+}
+
+/** Returns the Monday of the current week (based on ET, not UTC). */
 export function getCurrentWeekMonday(): string {
-  return getWeekMonday(new Date().toISOString().slice(0, 10));
+  return getWeekMonday(getTodayET());
+}
+
+/**
+ * Returns an array of ISO Monday dates surrounding the given Monday.
+ * Includes `pastWeeks` weeks before and `futureWeeks` weeks after (inclusive of the anchor).
+ * Sorted newest-first.
+ */
+export function getSurroundingWeeks(
+  monday: string,
+  pastWeeks = 3,
+  futureWeeks = 2
+): string[] {
+  const anchor = new Date(monday + "T12:00:00Z");
+  const weeks: string[] = [];
+  for (let i = -pastWeeks; i <= futureWeeks; i++) {
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() + i * 7);
+    weeks.push(d.toISOString().slice(0, 10));
+  }
+  return weeks.sort().reverse();
+}
+
+/**
+ * Merges DB-sourced week list with surrounding weeks for the current/viewed week.
+ * Ensures the dropdown always has navigable weeks regardless of DB data.
+ * Returns sorted newest-first, deduped.
+ */
+export function mergeWeekLists(dbWeeks: string[], currentMonday: string): string[] {
+  const surrounding = getSurroundingWeeks(currentMonday, 3, 2);
+  const combined = new Set([...dbWeeks, ...surrounding]);
+  return [...combined].sort().reverse();
 }
 
 /**
