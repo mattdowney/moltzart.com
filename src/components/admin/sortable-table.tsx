@@ -76,7 +76,7 @@ export function SortableTable({ children }: { children: ReactNode }) {
 
   return (
     <div className="not-prose my-6 rounded-lg border border-zinc-800/50 bg-zinc-900/30 overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full table-fixed">
         <thead className="border-b border-zinc-800/50 bg-zinc-800/40">
           <tr className="border-b border-zinc-800/30">
             {headers.map((header, i) => (
