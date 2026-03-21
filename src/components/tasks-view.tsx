@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DateRangePicker, type DateRange } from "@/components/ui/date-range-picker";
 import {
   Select,
   SelectContent,
@@ -382,8 +382,7 @@ function DoneColumn({
   onMarkDone: (taskId: string) => void;
 }) {
   const [agentFilter, setAgentFilter] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [olderOpen, setOlderOpen] = useState(false);
 
   const todayKey = getTodayKey();
@@ -393,16 +392,18 @@ function DoneColumn({
     if (agentFilter !== "all") {
       result = result.filter((t) => t.assigned_to === agentFilter);
     }
-    if (dateFrom) {
-      const fromKey = `${dateFrom.getFullYear()}-${String(dateFrom.getMonth() + 1).padStart(2, "0")}-${String(dateFrom.getDate()).padStart(2, "0")}`;
+    if (dateRange?.from) {
+      const from = dateRange.from;
+      const fromKey = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, "0")}-${String(from.getDate()).padStart(2, "0")}`;
       result = result.filter((t) => getTaskDateKey(t) >= fromKey);
     }
-    if (dateTo) {
-      const toKey = `${dateTo.getFullYear()}-${String(dateTo.getMonth() + 1).padStart(2, "0")}-${String(dateTo.getDate()).padStart(2, "0")}`;
+    if (dateRange?.to) {
+      const to = dateRange.to;
+      const toKey = `${to.getFullYear()}-${String(to.getMonth() + 1).padStart(2, "0")}-${String(to.getDate()).padStart(2, "0")}`;
       result = result.filter((t) => getTaskDateKey(t) <= toKey);
     }
     return result;
-  }, [tasks, agentFilter, dateFrom, dateTo]);
+  }, [tasks, agentFilter, dateRange]);
 
   const { todayTasks, olderTasks, olderByDay } = useMemo(() => {
     const today: DbTask[] = [];
@@ -424,7 +425,7 @@ function DoneColumn({
     return { todayTasks: today, olderTasks: older, olderByDay: sortedByDay };
   }, [filtered, todayKey]);
 
-  const hasFilters = agentFilter !== "all" || dateFrom !== undefined || dateTo !== undefined;
+  const hasFilters = agentFilter !== "all" || dateRange !== undefined;
   const Icon = TASK_STATUS_META.done.icon;
 
   function renderTaskList(taskList: DbTask[]) {
@@ -474,10 +475,10 @@ function DoneColumn({
 
       {/* Filters */}
       <div className="border-b border-zinc-800/40 px-3 py-2">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger size="sm" className="w-auto min-w-[5.5rem] text-xs">
-              <SelectValue placeholder="Agent" />
+            <SelectTrigger size="sm" className="w-full text-xs">
+              <SelectValue placeholder="Everyone" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Everyone</SelectItem>
@@ -486,25 +487,23 @@ function DoneColumn({
               ))}
             </SelectContent>
           </Select>
-          <DatePicker
-            value={dateFrom}
-            onChange={setDateFrom}
-            placeholder="From"
-          />
-          <DatePicker
-            value={dateTo}
-            onChange={setDateTo}
-            placeholder="To"
-          />
-          {hasFilters && (
-            <button
-              onClick={() => { setAgentFilter("all"); setDateFrom(undefined); setDateTo(undefined); }}
-              className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              <X size={12} className="shrink-0" />
-              Clear
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder="Date range"
+              className="flex-1"
+            />
+            {hasFilters && (
+              <button
+                onClick={() => { setAgentFilter("all"); setDateRange(undefined); }}
+                className="inline-flex items-center justify-center size-8 rounded-md text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                title="Clear filters"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -513,7 +512,7 @@ function DoneColumn({
         {todayTasks.length > 0 && (
           <div className="flex-1 min-h-0 flex flex-col">
             <div className="px-1 py-1.5 shrink-0">
-              <span className="text-2xs font-medium uppercase tracking-[0.08em] text-emerald-400/70">
+              <span className="type-body-sm font-medium text-zinc-100">
                 Today
               </span>
             </div>
