@@ -20,10 +20,10 @@ function Calendar({
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
-        month: "flex flex-col gap-4",
-        month_caption: "flex justify-center items-center w-full",
+        month: "grid grid-cols-[auto_1fr_auto] gap-y-4 items-center",
+        month_caption: "col-start-2 flex items-center justify-center",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center justify-between w-full px-1",
+        nav: "contents",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
           "size-7 bg-transparent p-0 opacity-50 hover:opacity-100"
@@ -32,7 +32,7 @@ function Calendar({
           buttonVariants({ variant: "outline" }),
           "size-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        month_grid: "w-full border-collapse space-x-1",
+        month_grid: "col-span-3 w-full border-collapse space-x-1",
         weekdays: "flex",
         weekday:
           "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
