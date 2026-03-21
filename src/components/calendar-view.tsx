@@ -171,7 +171,7 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
   const contentRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
-  const todayKey = fmtDate(new Date());
+  const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
   const loadWeek = useCallback(async (start: string) => {
     setWeekStart(start);

@@ -4,8 +4,9 @@ import { getCronCalendarData } from "@/lib/openclaw-crons";
 export const dynamic = "force-dynamic";
 
 function getWeekRange(date: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
+  // Use America/New_York timezone to avoid UTC midnight boundary issues (e.g. after 8 PM ET)
+  const etDateStr = date.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const d = new Date(etDateStr + 'T12:00:00');
   const day = d.getDay();
   // Monday-start: Sun(0)->-6, Mon(1)->0, Tue(2)->-1, ...
   const diff = day === 0 ? -6 : 1 - day;
