@@ -32,6 +32,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const id = await insertDocument({ title, content, category, agent });
-  return NextResponse.json({ ok: true, id });
+  const { id, slug } = await insertDocument({ title, content, category, agent });
+  return NextResponse.json({ ok: true, id, slug });
 }

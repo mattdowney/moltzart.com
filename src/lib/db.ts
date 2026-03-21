@@ -1959,6 +1959,7 @@ function formatDayLabel(dateStr: string): string {
 export interface DbDocument {
   id: string;
   title: string;
+  slug: string | null;
   content: string;
   category: string | null;
   agent: string | null;
@@ -1966,22 +1967,32 @@ export interface DbDocument {
   updated_at: string;
 }
 
+export function toDocumentSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export async function fetchDocumentsDb(category?: string): Promise<Omit<DbDocument, "content">[]> {
   const rows = category
     ? await sql()`
-        SELECT id, title, category, agent, created_at, updated_at
+        SELECT id, title, slug, category, agent, created_at, updated_at
         FROM documents
         WHERE category = ${category}
         ORDER BY created_at DESC
       `
     : await sql()`
-        SELECT id, title, category, agent, created_at, updated_at
+        SELECT id, title, slug, category, agent, created_at, updated_at
         FROM documents
         ORDER BY created_at DESC
       `;
   return rows.map((r) => ({
     id: String(r.id),
     title: String(r.title),
+    slug: r.slug ? String(r.slug) : null,
     category: r.category ? String(r.category) : null,
     agent: r.agent ? String(r.agent) : null,
     created_at: toDateTimeStr(r.created_at),
@@ -2000,6 +2011,27 @@ export async function fetchDocumentById(id: string): Promise<DbDocument | null> 
   return {
     id: String(r.id),
     title: String(r.title),
+    slug: r.slug ? String(r.slug) : null,
+    content: String(r.content),
+    category: r.category ? String(r.category) : null,
+    agent: r.agent ? String(r.agent) : null,
+    created_at: toDateTimeStr(r.created_at),
+    updated_at: toDateTimeStr(r.updated_at),
+  };
+}
+
+export async function fetchDocumentBySlug(slug: string): Promise<DbDocument | null> {
+  const rows = await sql()`
+    SELECT * FROM documents
+    WHERE slug = ${slug}
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    title: String(r.title),
+    slug: r.slug ? String(r.slug) : null,
     content: String(r.content),
     category: r.category ? String(r.category) : null,
     agent: r.agent ? String(r.agent) : null,
@@ -2013,13 +2045,14 @@ export async function insertDocument(input: {
   content: string;
   category?: string;
   agent?: string;
-}): Promise<string> {
+}): Promise<{ id: string; slug: string }> {
+  const slug = toDocumentSlug(input.title);
   const rows = await sql()`
-    INSERT INTO documents (title, content, category, agent)
-    VALUES (${input.title}, ${input.content}, ${input.category || null}, ${input.agent || null})
-    RETURNING id
+    INSERT INTO documents (title, slug, content, category, agent)
+    VALUES (${input.title}, ${slug}, ${input.content}, ${input.category || null}, ${input.agent || null})
+    RETURNING id, slug
   `;
-  return String(rows[0].id);
+  return { id: String(rows[0].id), slug: String(rows[0].slug) };
 }
 
 export async function deleteDocument(id: string): Promise<boolean> {
