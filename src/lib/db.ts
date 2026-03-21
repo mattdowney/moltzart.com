@@ -1953,3 +1953,80 @@ function formatDayLabel(dateStr: string): string {
   if (diffDays === 1) return "Yesterday";
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 }
+
+// --- Documents ---
+
+export interface DbDocument {
+  id: string;
+  title: string;
+  content: string;
+  category: string | null;
+  agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchDocumentsDb(category?: string): Promise<Omit<DbDocument, "content">[]> {
+  const rows = category
+    ? await sql()`
+        SELECT id, title, category, agent, created_at, updated_at
+        FROM documents
+        WHERE category = ${category}
+        ORDER BY created_at DESC
+      `
+    : await sql()`
+        SELECT id, title, category, agent, created_at, updated_at
+        FROM documents
+        ORDER BY created_at DESC
+      `;
+  return rows.map((r) => ({
+    id: String(r.id),
+    title: String(r.title),
+    category: r.category ? String(r.category) : null,
+    agent: r.agent ? String(r.agent) : null,
+    created_at: toDateTimeStr(r.created_at),
+    updated_at: toDateTimeStr(r.updated_at),
+  }));
+}
+
+export async function fetchDocumentById(id: string): Promise<DbDocument | null> {
+  const rows = await sql()`
+    SELECT * FROM documents
+    WHERE id = ${id}::uuid
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    title: String(r.title),
+    content: String(r.content),
+    category: r.category ? String(r.category) : null,
+    agent: r.agent ? String(r.agent) : null,
+    created_at: toDateTimeStr(r.created_at),
+    updated_at: toDateTimeStr(r.updated_at),
+  };
+}
+
+export async function insertDocument(input: {
+  title: string;
+  content: string;
+  category?: string;
+  agent?: string;
+}): Promise<string> {
+  const rows = await sql()`
+    INSERT INTO documents (title, content, category, agent)
+    VALUES (${input.title}, ${input.content}, ${input.category || null}, ${input.agent || null})
+    RETURNING id
+  `;
+  return String(rows[0].id);
+}
+
+export async function deleteDocument(id: string): Promise<boolean> {
+  const rows = await sql()`
+    DELETE FROM documents
+    WHERE id = ${id}::uuid
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
