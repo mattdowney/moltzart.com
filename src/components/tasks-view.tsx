@@ -425,7 +425,10 @@ function DoneColumn({
       byDay.get(key)!.push(task);
     }
     const sortedByDay = [...byDay.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-    return { todayTasks: today, olderTasks: older, olderByDay: sortedByDay };
+    const sortedToday = today.sort((a, b) =>
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+    return { todayTasks: sortedToday, olderTasks: older, olderByDay: sortedByDay };
   }, [filtered, todayKey]);
 
   const hasFilters = agentFilter !== "all" || dateRange !== undefined;
