@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   PlayCircle,
   ListTodo,
-  X,
 } from "lucide-react";
 import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
@@ -501,15 +500,7 @@ function DoneColumn({
               placeholder="Date range"
               className="flex-1"
             />
-            {hasFilters && (
-              <button
-                onClick={() => { setAgentFilter("all"); setDateRange(undefined); }}
-                className="inline-flex items-center justify-center size-8 rounded-md text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
-                title="Clear filters"
-              >
-                <X size={12} />
-              </button>
-            )}
+
           </div>
         </div>
       </div>
