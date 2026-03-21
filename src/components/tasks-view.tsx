@@ -211,6 +211,7 @@ function moveTask(
 function TaskCard({
   task,
   saving,
+  glowIndex,
   onDragStart,
   onDragEnd,
   onOpenDetail,
@@ -218,6 +219,7 @@ function TaskCard({
 }: {
   task: DbTask;
   saving: boolean;
+  glowIndex?: number;
   onDragStart: (taskId: string) => void;
   onDragEnd: () => void;
   onOpenDetail: (taskId: string) => void;
@@ -233,6 +235,7 @@ function TaskCard({
   const glowStyle = isWorking
     ? ({
         "--glow-color-solid": getGlowColor(getAgentMeta(task.assigned_to).glow),
+        "--glow-delay": `${(glowIndex ?? 0) * 1.2}s`,
       } as React.CSSProperties)
     : undefined;
 
@@ -445,6 +448,7 @@ function DoneColumn({
           <TaskCard
             task={task}
             saving={savingTaskId === task.id}
+            glowIndex={index}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onOpenDetail={onOpenDetail}
@@ -789,6 +793,7 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
                         <TaskCard
                           task={task}
                           saving={savingTaskId === task.id}
+                          glowIndex={index}
                           onDragStart={(taskId) => {
                             setDraggingTaskId(taskId);
                             setError("");

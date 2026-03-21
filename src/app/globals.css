@@ -201,6 +201,7 @@ html {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: rotate-border 2.5s linear infinite;
+  animation-delay: var(--glow-delay, 0s);
   pointer-events: none;
 }
 
