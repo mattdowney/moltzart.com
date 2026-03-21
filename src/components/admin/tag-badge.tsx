@@ -1,3 +1,4 @@
+import { Bot, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ProjectStatus, ProjectKind } from "@/lib/projects";
 import { STATUS_META } from "@/lib/projects";
@@ -71,4 +72,33 @@ export const domainColors: Record<string, string> = {
 
 export function DomainTag({ domain }: { domain: string }) {
   return <Badge className={domainColors[domain]}>{domain.toUpperCase()}</Badge>;
+}
+
+/* ── Document badges ────────────────────────────────────────────── */
+
+export const categoryColors: Record<string, string> = {
+  reports: "bg-blue-500/20 text-blue-400",
+  analysis: "bg-violet-500/20 text-violet-400",
+  research: "bg-cyan-500/20 text-cyan-400",
+  logs: "bg-amber-500/20 text-amber-400",
+  notes: "bg-green-500/20 text-green-400",
+};
+
+export function CategoryTag({ category }: { category: string }) {
+  const colorClass = categoryColors[category.toLowerCase()];
+  return (
+    <Badge className={colorClass}>
+      <Tag />
+      {category}
+    </Badge>
+  );
+}
+
+export function AgentTag({ agent }: { agent: string }) {
+  return (
+    <Badge className="bg-purple-500/20 text-purple-400">
+      <Bot />
+      {agent}
+    </Badge>
+  );
 }
