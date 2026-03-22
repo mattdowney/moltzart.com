@@ -51,12 +51,14 @@ const columns: Column<FlatArticle>[] = [
     label: "Source",
     render: (a) => a.source || <span className="text-zinc-600">—</span>,
     sortValue: (a) => a.source || "",
+    hiddenOnMobile: true,
   },
   {
     key: "day",
     label: "Day",
     render: (a) => a.dayLabel,
     sortValue: (a) => a.digestDate,
+    hiddenOnMobile: true,
   },
 ];
 

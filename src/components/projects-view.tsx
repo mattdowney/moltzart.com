@@ -30,18 +30,21 @@ const projectColumns: Column<DbProject>[] = [
     label: "Kind",
     render: (p) => <KindTag kind={p.kind} />,
     sortValue: (p) => p.kind,
+    hiddenOnMobile: true,
   },
   {
     key: "artifacts",
     label: "Artifacts",
     render: (p) => p.artifact_count,
     sortValue: (p) => p.artifact_count,
+    hiddenOnMobile: true,
   },
   {
     key: "updated",
     label: "Updated",
     render: (p) => formatShortDate(p.updated_at),
     sortValue: (p) => p.updated_at,
+    hiddenOnMobile: true,
   },
 ];
 
@@ -57,12 +60,14 @@ const triageColumns: Column<DbResearchArtifact>[] = [
     label: "Domain",
     render: (a) => <DomainTag domain={a.domain} />,
     sortValue: (a) => a.domain,
+    hiddenOnMobile: true,
   },
   {
     key: "created",
     label: "Date",
     render: (a) => formatShortDate(a.created_at),
     sortValue: (a) => a.created_at,
+    hiddenOnMobile: true,
   },
 ];
 

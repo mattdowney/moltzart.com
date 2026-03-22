@@ -9,28 +9,21 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { Briefcase, CalendarDays, CheckSquare, FileText, LayoutDashboard, LogOut, Newspaper, Paintbrush } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarNav, type SidebarNavItem } from "@/components/admin/sidebar-nav";
-
-const navItems: SidebarNavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Tasks", href: "/admin/tasks", icon: CheckSquare },
-  { label: "Crons", href: "/admin/calendar", icon: CalendarDays },
-  { label: "Projects", href: "/admin/projects", icon: Briefcase },
-  { label: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
-  { label: "Documents", href: "/admin/documents", icon: FileText },
-  { label: "Styleguide", href: "/admin/styleguide", icon: Paintbrush },
-];
+import { adminNavItems } from "@/lib/admin-nav";
 
 const isAdminNavItemActive = (item: SidebarNavItem, pathname: string) =>
   item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   const handleLogout = () => {
     window.location.href = "/api/auth/signout";
@@ -53,10 +46,11 @@ export function AdminSidebar() {
         <SidebarGroup>
           <SidebarNav
             className="px-2"
-            items={navItems}
+            items={adminNavItems}
             pathname={pathname}
             label="Workspace"
             isItemActive={isAdminNavItemActive}
+            onNavigate={() => setOpenMobile(false)}
           />
         </SidebarGroup>
       </SidebarContent>

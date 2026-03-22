@@ -48,7 +48,7 @@ export function AdminPageIntro({
     >
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="breadcrumb" className="mb-3">
-          <ol className="flex items-center gap-1.5">
+          <ol className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {breadcrumbs.map((item, i) => (
               <Fragment key={`${item.label}-${i}`}>
                 {i > 0 && (
@@ -76,7 +76,7 @@ export function AdminPageIntro({
         </nav>
       )}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-row items-end justify-between gap-4">
         <div className="min-w-0 max-w-3xl space-y-2">
           <h1 className="type-h1 text-zinc-100">{title}</h1>
           {subtitle && (
@@ -90,7 +90,7 @@ export function AdminPageIntro({
         </div>
 
         {actions && (
-          <div className="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
             {actions}
           </div>
         )}

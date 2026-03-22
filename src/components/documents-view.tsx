@@ -43,6 +43,7 @@ const columns: Column<DocumentSummary>[] = [
     label: "Created",
     render: (doc) => formatDateTime(doc.created_at),
     sortValue: (doc) => doc.created_at,
+    hiddenOnMobile: true,
   },
 ];
 

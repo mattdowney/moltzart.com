@@ -46,7 +46,7 @@ export function PanelHeader({
   children,
 }: PanelHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-zinc-800/40 px-4 py-4">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-800/40 px-4 py-4">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           {Icon && <Icon size={14} className={cn("shrink-0 text-zinc-400", iconClassName)} />}

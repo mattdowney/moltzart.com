@@ -1,14 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import type { DbCronJob, DbJobRun } from "@/lib/db";
 import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { getScheduledRunStatus, isHighFrequencyCron, parseCronField, cronMatchesDay, type CronRunStatus } from "@/lib/cron-health";
 import type { OpenClawCronMeta } from "@/lib/openclaw-crons";
 import { AGENT_META, getAgentMeta } from "@/lib/agents";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // --- Types ---
 
@@ -48,6 +50,7 @@ const STATUS_INDICATOR: Record<CronRunStatus, { dot: string; border: string }> =
 // --- Date helpers (Monday-start week) ---
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function fmtDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -71,6 +74,12 @@ function formatHM(h: number, m: number): string {
 
 function sortKeyHM(h: number, m: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function formatMobileDayHeader(dateKey: string, idx: number): string {
+  const d = new Date(dateKey + "T12:00:00");
+  const month = d.toLocaleDateString("en-US", { month: "short" });
+  return `${WEEKDAYS_LONG[idx]} · ${month} ${d.getDate()}`;
 }
 
 interface CronRun {
@@ -169,6 +178,7 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const headerRefs = useRef<Array<HTMLDivElement | null>>([]);
   const contentRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const isMobile = useIsMobile();
 
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
   const todayKey = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -205,6 +215,8 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
   );
 
   useLayoutEffect(() => {
+    if (isMobile) return;
+
     let frame1 = 0;
     let frame2 = 0;
 
@@ -238,10 +250,10 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
       cancelAnimationFrame(frame2);
       window.removeEventListener("resize", measureAfterLayout);
     };
-  }, [scheduled, weekDays]);
+  }, [scheduled, weekDays, isMobile]);
 
   const iconButtonClass =
-    "inline-flex size-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800/40 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex size-11 md:size-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800/40 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500/60 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
 
   return (
     <div className="space-y-4">
@@ -272,7 +284,8 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
         }
       />
 
-      <div className="flex items-center justify-between gap-4">
+      {/* Legend */}
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
         <div className="flex items-center gap-3 min-w-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <span className="type-badge text-zinc-600 shrink-0">Agents</span>
           {(["moltzart", "scout", "pica", "hawk", "sigmund", "finch"] as const).map((agentKey) => {
@@ -311,8 +324,44 @@ export function CalendarView({ initialData, initialStart }: CalendarViewProps) {
         </div>
       </div>
 
-      {/* Weekly columns */}
-      <div ref={panelRef}>
+      {/* Mobile day list */}
+      <div className="md:hidden space-y-2">
+        {weekDays.map((dateKey, idx) => {
+          const events = scheduled.get(dateKey) || [];
+          const isToday = dateKey === todayKey;
+          const isPast = dateKey < todayKey;
+
+          return (
+            <Collapsible key={dateKey} defaultOpen={isToday} className="group/day">
+              <Panel className={isPast ? "opacity-60" : ""}>
+                <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                  <ChevronDown className="size-4 shrink-0 text-zinc-600 transition-transform group-data-[state=closed]/day:-rotate-90" />
+                  <span className={`type-body-sm font-medium flex-1 ${isToday ? "text-teal-400" : "text-zinc-200"}`}>
+                    {formatMobileDayHeader(dateKey, idx)}
+                  </span>
+                  <span className={`type-badge ${isToday ? "text-teal-400/70" : "text-zinc-600"}`}>
+                    {events.length} {events.length === 1 ? "event" : "events"}
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="border-t border-zinc-800/30 px-4 py-2 space-y-1.5">
+                    {events.length > 0 ? (
+                      events.map((ev, i) => (
+                        <EventCard key={`${ev.jobId}-${ev.sortKey}-${i}`} event={ev} />
+                      ))
+                    ) : (
+                      <p className="type-badge py-2 text-zinc-700">No events</p>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Panel>
+            </Collapsible>
+          );
+        })}
+      </div>
+
+      {/* Desktop weekly columns */}
+      <div ref={panelRef} className="hidden md:block">
         <Panel
           className={`flex flex-col overflow-hidden ${loading ? "pointer-events-none opacity-50" : ""}`}
           style={{ height: panelHeight ? `${panelHeight}px` : "calc(100svh - 10rem)" }}

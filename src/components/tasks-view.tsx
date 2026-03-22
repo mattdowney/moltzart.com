@@ -263,7 +263,7 @@ function TaskCard({
     >
       <div className="flex items-start gap-2">
         {isMattTask && (
-          <GripVertical size={14} className={`${isDone ? "mt-0" : "mt-1"} text-zinc-600 shrink-0`} />
+          <GripVertical size={14} className={`${isDone ? "mt-0" : "mt-1"} text-zinc-600 shrink-0 hidden md:block`} />
         )}
         <div className="min-w-0 flex-1">
           <p className={`type-body-sm ${isDone ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
@@ -714,107 +714,149 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
         subtitle="Move work across todo, active execution, and completed follow-through."
       />
 
-      <Panel className="flex flex-col h-[calc(100svh-10rem)] overflow-hidden">
-
       {error && (
-        <div className="px-4 py-2 border-b border-zinc-800/30">
+        <Panel className="px-4 py-2">
           <p className="type-body-sm text-red-400/80">{error}</p>
-        </div>
+        </Panel>
       )}
 
       {data.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center py-8">
+        <Panel className="flex items-center justify-center py-8">
           <EmptyState icon={Calendar} message="No tasks yet." />
-        </div>
+        </Panel>
       ) : (
-        <div className="flex-1 min-h-0 overflow-x-auto p-3">
-          <div className="grid h-full min-w-[840px] grid-cols-3 gap-3">
-            {VISIBLE_TASK_BOARD_STATUSES.map((status) => {
-              if (status === "done") {
-                return (
-                  <DoneColumn
-                    key="done"
-                    tasks={columns.done}
-                    dragOver={dragOver}
-                    draggingTaskId={draggingTaskId}
-                    savingTaskId={savingTaskId}
-                    onDragOver={(s, i) => setDragOver({ status: s, index: i })}
-                    onDrop={handleDrop}
-                    onDragStart={(taskId) => {
-                      setDraggingTaskId(taskId);
-                      setError("");
-                    }}
-                    onDragEnd={() => {
-                      setDraggingTaskId(null);
-                      setDragOver(null);
-                    }}
-                    onOpenDetail={(taskId) => setDetailTaskId(taskId)}
-                    onMarkDone={(taskId) => void applyMove(taskId, "done", columns.done.length)}
-                  />
-                );
-              }
+        <>
+          {/* Mobile stacked view */}
+          <div className="md:hidden space-y-3">
+            {(["in_progress", "todo", "done"] as const).map((status) => {
               const tasks = columns[status];
               const Icon = TASK_STATUS_META[status].icon;
               return (
-                <div
-                  key={status}
-                  className="flex h-full min-h-0 flex-col rounded-xl border border-zinc-800/50 bg-zinc-950/50"
-                  onDragOver={(e) => e.preventDefault()}
-                >
-                  <div className="border-b border-zinc-800/40 px-3 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Icon size={15} className={cn("shrink-0", TASK_STATUS_META[status].tone)} />
-                        <span className="type-body-sm font-medium text-zinc-100">{TASK_STATUS_LABELS[status]}</span>
-                      </div>
+                <Collapsible key={status} defaultOpen={status !== "done"}>
+                  <Panel>
+                    <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3 text-left">
+                      <Icon size={15} className={cn("shrink-0", TASK_STATUS_META[status].tone)} />
+                      <span className="type-body-sm font-medium text-zinc-100 flex-1">{TASK_STATUS_LABELS[status]}</span>
                       <span className="type-body-sm text-zinc-500">{tasks.length}</span>
-                    </div>
-                    <p className="mt-2 type-body-sm text-zinc-500">
-                      {TASK_STATUS_META[status].description}
-                    </p>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                    {tasks.map((task, index) => (
-                      <div key={task.id} className="space-y-1">
-                        <DropSlot
-                          active={dragOver?.status === status && dragOver.index === index}
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            if (draggingTaskId) setDragOver({ status, index });
-                          }}
-                          onDrop={(e) => handleDrop(status, index, e)}
-                        />
-                        <TaskCard
-                          task={task}
-                          saving={savingTaskId === task.id}
-                          glowIndex={index}
-                          onDragStart={(taskId) => {
-                            setDraggingTaskId(taskId);
-                            setError("");
-                          }}
-                          onDragEnd={() => {
-                            setDraggingTaskId(null);
-                            setDragOver(null);
-                          }}
-                          onOpenDetail={(taskId) => setDetailTaskId(taskId)}
-                          onMarkDone={() => void applyMove(task.id, "done", columns.done.length)}
-                        />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="border-t border-zinc-800/30 p-2 space-y-1.5">
+                        {tasks.length > 0 ? (
+                          tasks.map((task, index) => (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              saving={savingTaskId === task.id}
+                              glowIndex={index}
+                              onDragStart={() => {}}
+                              onDragEnd={() => {}}
+                              onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                              onMarkDone={() => void applyMove(task.id, "done", columns.done.length)}
+                            />
+                          ))
+                        ) : (
+                          <p className="type-body-sm text-zinc-600 py-3 text-center">No tasks</p>
+                        )}
                       </div>
-                    ))}
-                    <DropSlot
-                      active={dragOver?.status === status && dragOver.index === tasks.length}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        if (draggingTaskId) setDragOver({ status, index: tasks.length });
-                      }}
-                      onDrop={(e) => handleDrop(status, tasks.length, e)}
-                    />
-                  </div>
-                </div>
+                    </CollapsibleContent>
+                  </Panel>
+                </Collapsible>
               );
             })}
           </div>
-        </div>
+
+          {/* Desktop kanban */}
+          <Panel className="hidden md:flex flex-col h-[calc(100svh-10rem)] overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-x-auto p-3">
+              <div className="grid h-full min-w-[840px] grid-cols-3 gap-3">
+                {VISIBLE_TASK_BOARD_STATUSES.map((status) => {
+                  if (status === "done") {
+                    return (
+                      <DoneColumn
+                        key="done"
+                        tasks={columns.done}
+                        dragOver={dragOver}
+                        draggingTaskId={draggingTaskId}
+                        savingTaskId={savingTaskId}
+                        onDragOver={(s, i) => setDragOver({ status: s, index: i })}
+                        onDrop={handleDrop}
+                        onDragStart={(taskId) => {
+                          setDraggingTaskId(taskId);
+                          setError("");
+                        }}
+                        onDragEnd={() => {
+                          setDraggingTaskId(null);
+                          setDragOver(null);
+                        }}
+                        onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                        onMarkDone={(taskId) => void applyMove(taskId, "done", columns.done.length)}
+                      />
+                    );
+                  }
+                  const tasks = columns[status];
+                  const Icon = TASK_STATUS_META[status].icon;
+                  return (
+                    <div
+                      key={status}
+                      className="flex h-full min-h-0 flex-col rounded-xl border border-zinc-800/50 bg-zinc-950/50"
+                      onDragOver={(e) => e.preventDefault()}
+                    >
+                      <div className="border-b border-zinc-800/40 px-3 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Icon size={15} className={cn("shrink-0", TASK_STATUS_META[status].tone)} />
+                            <span className="type-body-sm font-medium text-zinc-100">{TASK_STATUS_LABELS[status]}</span>
+                          </div>
+                          <span className="type-body-sm text-zinc-500">{tasks.length}</span>
+                        </div>
+                        <p className="mt-2 type-body-sm text-zinc-500">
+                          {TASK_STATUS_META[status].description}
+                        </p>
+                      </div>
+                      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {tasks.map((task, index) => (
+                          <div key={task.id} className="space-y-1">
+                            <DropSlot
+                              active={dragOver?.status === status && dragOver.index === index}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                if (draggingTaskId) setDragOver({ status, index });
+                              }}
+                              onDrop={(e) => handleDrop(status, index, e)}
+                            />
+                            <TaskCard
+                              task={task}
+                              saving={savingTaskId === task.id}
+                              glowIndex={index}
+                              onDragStart={(taskId) => {
+                                setDraggingTaskId(taskId);
+                                setError("");
+                              }}
+                              onDragEnd={() => {
+                                setDraggingTaskId(null);
+                                setDragOver(null);
+                              }}
+                              onOpenDetail={(taskId) => setDetailTaskId(taskId)}
+                              onMarkDone={() => void applyMove(task.id, "done", columns.done.length)}
+                            />
+                          </div>
+                        ))}
+                        <DropSlot
+                          active={dragOver?.status === status && dragOver.index === tasks.length}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (draggingTaskId) setDragOver({ status, index: tasks.length });
+                          }}
+                          onDrop={(e) => handleDrop(status, tasks.length, e)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Panel>
+        </>
       )}
       <Sheet open={Boolean(detailTask)} onOpenChange={(open) => !open && setDetailTaskId(null)}>
         <SheetContent side="right" className="w-full border-zinc-800 bg-zinc-950 text-zinc-100 sm:max-w-lg">
@@ -865,6 +907,28 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
           </SheetHeader>
           {detailTask && (
             <div className="space-y-5 overflow-y-auto px-4 py-4">
+              {/* Mobile status changer */}
+              {detailTask.assigned_to === "matt" && (
+                <div className="md:hidden">
+                  <p className="text-2xs font-medium uppercase tracking-[0.08em] text-zinc-500 mb-2">Move to</p>
+                  <Select
+                    value={normalizeTaskStatusInput(detailTask.status)}
+                    onValueChange={(value) => {
+                      const newStatus = value as TaskStatus;
+                      void applyMove(detailTask.id, newStatus, columns[newStatus].length);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VISIBLE_TASK_BOARD_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>{TASK_STATUS_LABELS[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {isTaskLate(detailTask) && (
                 <div className="rounded-lg border border-red-400/20 bg-red-400/8 px-4 py-3">
                   <p className="text-2xs font-medium uppercase tracking-[0.08em] text-red-400">Overdue</p>
@@ -897,7 +961,6 @@ export function TasksView({ initialData }: { initialData: DbTask[] }) {
           )}
         </SheetContent>
       </Sheet>
-    </Panel>
     </div>
   );
 }

@@ -24,6 +24,7 @@ const columns: Column<NewsletterWeekSummary>[] = [
     label: "Days",
     render: (s) => s.dayCount,
     sortValue: (s) => s.dayCount,
+    hiddenOnMobile: true,
   },
 ];
 

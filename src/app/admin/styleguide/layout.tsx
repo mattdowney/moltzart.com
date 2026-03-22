@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { SidebarNav, type SidebarNavItem } from "@/components/admin/sidebar-nav";
+import { MobileSubNav } from "@/components/admin/mobile-sub-nav";
 
 const navLinks: SidebarNavItem[] = [
   { href: "/admin/styleguide/palette", label: "Palette", icon: Palette },
@@ -34,8 +35,10 @@ export default function StyleguideLayout({ children }: { children: React.ReactNo
     <div>
       <PageHeader title="Styleguide" />
 
+      <MobileSubNav items={navLinks} pathname={pathname} className="mt-4" />
+
       <div className="flex gap-10 mt-8">
-        {/* Left sidebar nav */}
+        {/* Left sidebar nav — desktop only */}
         <nav className="sticky top-6 self-start w-48 shrink-0 hidden md:block">
           <SidebarNav items={navLinks} pathname={pathname} label="Navigation" />
         </nav>
