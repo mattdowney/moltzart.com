@@ -5,7 +5,6 @@ import {
   FileText,
   LayoutDashboard,
   Newspaper,
-  Paintbrush,
 } from "lucide-react";
 import type { SidebarNavItem } from "@/components/admin/sidebar-nav";
 
@@ -16,11 +15,11 @@ export const adminNavItems: SidebarNavItem[] = [
   { label: "Projects", href: "/admin/projects", icon: Briefcase },
   { label: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
   { label: "Documents", href: "/admin/documents", icon: FileText },
-  { label: "Styleguide", href: "/admin/styleguide", icon: Paintbrush },
 ];
 
 export function getAdminPageTitle(pathname: string): string {
   if (pathname === "/admin") return "Dashboard";
+  if (pathname.startsWith("/admin/styleguide")) return "Styleguide";
   const match = adminNavItems.find(
     (item) => item.href !== "/admin" && pathname.startsWith(item.href)
   );

@@ -11,10 +11,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, Paintbrush, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarNav, type SidebarNavItem } from "@/components/admin/sidebar-nav";
 import { adminNavItems } from "@/lib/admin-nav";
 
@@ -23,11 +30,8 @@ const isAdminNavItemActive = (item: SidebarNavItem, pathname: string) =>
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setOpenMobile } = useSidebar();
-
-  const handleLogout = () => {
-    window.location.href = "/api/auth/signout";
-  };
 
   return (
     <Sidebar collapsible="offcanvas" className="min-h-svh border-r border-sidebar-border/80 bg-sidebar">
@@ -48,7 +52,7 @@ export function AdminSidebar() {
             className="px-2"
             items={adminNavItems}
             pathname={pathname}
-            label="Workspace"
+            label=""
             isItemActive={isAdminNavItemActive}
             onNavigate={() => setOpenMobile(false)}
           />
@@ -57,10 +61,34 @@ export function AdminSidebar() {
       <SidebarFooter className="border-t border-sidebar-border/80 bg-zinc-900/30">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <LogOut />
-              <span>Log out</span>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton className="focus-visible:ring-0">
+                  <Settings />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-[--radix-dropdown-menu-trigger-width]">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setOpenMobile(false);
+                    router.push("/admin/styleguide");
+                  }}
+                >
+                  <Paintbrush />
+                  Styleguide
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => {
+                    window.location.href = "/api/auth/signout";
+                  }}
+                >
+                  <LogOut />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
