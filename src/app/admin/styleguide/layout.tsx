@@ -35,11 +35,11 @@ export default function StyleguideLayout({ children }: { children: React.ReactNo
     <div>
       <PageHeader title="Styleguide" />
 
-      <MobileSubNav items={navLinks} pathname={pathname} className="mt-4" />
+      <MobileSubNav items={navLinks} pathname={pathname} className="mt-4 lg:hidden" />
 
       <div className="flex gap-10 mt-8">
-        {/* Left sidebar nav — desktop only */}
-        <nav className="sticky top-6 self-start w-48 shrink-0 hidden md:block">
+        {/* Left sidebar nav — large screens only */}
+        <nav className="sticky top-6 self-start w-48 shrink-0 hidden lg:block">
           <SidebarNav items={navLinks} pathname={pathname} label="Navigation" />
         </nav>
 
