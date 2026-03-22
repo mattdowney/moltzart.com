@@ -1,8 +1,7 @@
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth";
 
 export async function getAdminAuth(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token")?.value;
-  if (!token || token !== process.env.TASKS_PASSWORD) return null;
-  return token;
+  const session = await auth();
+  if (!session?.user?.email) return null;
+  return session.user.email;
 }

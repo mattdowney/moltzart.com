@@ -13,7 +13,7 @@ import {
 import { Briefcase, CalendarDays, CheckSquare, FileText, LayoutDashboard, LogOut, Newspaper, Paintbrush } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SidebarNav, type SidebarNavItem } from "@/components/admin/sidebar-nav";
 
 const navItems: SidebarNavItem[] = [
@@ -31,11 +31,9 @@ const isAdminNavItemActive = (item: SidebarNavItem, pathname: string) =>
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
 
-  const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.refresh();
+  const handleLogout = () => {
+    window.location.href = "/api/auth/signout";
   };
 
   return (

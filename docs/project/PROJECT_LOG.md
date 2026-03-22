@@ -9,7 +9,10 @@
 - **Learned:** The cron name already updated to "Newsletter Catch Up Check" via a prior telemetry sync — the `upsertCronJobs` ON CONFLICT updates name automatically. No manual rename needed.
 - **Watch:** The `consecutive_errors: 2` on `newsletter-processing` is stale from the old batch-processing architecture (Pica timeouts). Will clear after next successful 10 AM run. Not a current problem.
 - **Watch:** Action column width in `SortableDataTable` is now `w-40` globally — this affects projects table and newsletter editions table too. If those look too wide, may need per-table override.
-- **Next:** Set `OS_BASE_URL` and `OS_BULK_IMPORT_KEY` on Moltzart's Vercel env vars (carried over from session 27). Commit and push session 28 changes.
+- Verified build, committed and pushed session 28 changes (`9e26f76`). Remote had new commits — rebased cleanly before push.
+- `OS_BASE_URL` and `OS_BULK_IMPORT_KEY` env vars confirmed set on Vercel. Newsletter bridge is now fully functional in production.
+- **Learned:** Remote had diverged (Vercel or another source pushed `77f1afa`). `git pull --rebase` resolved it cleanly — always pull before pushing after a gap.
+- **Next:** Monitor newsletter bridge in production — confirm "Send to OS" button works end-to-end on moltzart.com. Check calendar tomorrow to verify `newsletter-processing` cron clears its `consecutive_errors`.
 
 ## 2026-03-11 (session 27)
 
