@@ -1,5 +1,19 @@
 # Project Log
 
+## 2026-03-21 (session 29)
+
+- Replaced password-based admin auth with Google OAuth via Auth.js v5. Only `matt@mattdowney.com` can sign in. Deleted `/api/admin/verify`, `/api/admin/logout`, and the standalone `/app/tasks` page (was orphaned — only `/admin/tasks` should exist). Updated all API routes to use Auth.js sessions via `getAdminAuth()`. Sidebar logout now uses Auth.js signout.
+- Component-first responsive rebuild for the entire admin site. New mobile header with page title + avatar. `SortableDataTable` gains `hiddenOnMobile` column flag — consumers mark secondary columns. Calendar view switches from 7-column grid to collapsible day list on mobile. Tasks view switches from 3-column kanban to stacked collapsible sections with status `Select` in the detail sheet for moving tasks. `PanelHeader` wraps on narrow screens. Breadcrumbs scroll horizontally. `MobileSubNav` component for horizontal scrollable pill bar (used by styleguide). Sidebar closes on mobile nav link tap.
+- **Decision:** Auth.js v5 with JWT session strategy — no database changes needed. Email allowlist hardcoded in `signIn` callback (single-user app). `TASKS_PASSWORD` env var no longer needed for login.
+- **Decision:** Component-first responsive approach: each component handles its own mobile scaling via `hiddenOnMobile`, `flex-wrap`, responsive padding. Pages compose naturally from responsive components without page-level layout hacks.
+- **Decision:** Calendar and tasks use CSS-based view switching (`hidden md:block` / `md:hidden`) rather than JS-toggled state. Both DOM trees render; CSS controls visibility. Zero business logic duplication.
+- **Decision:** Styleguide secondary nav uses `lg` breakpoint (1024px) instead of `md` (768px) because at tablet widths the main sidebar + secondary nav + content don't fit. `MobileSubNav` takes its hide breakpoint via className so each consumer controls it.
+- **Learned:** Auth.js v5 env vars must be `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` (not `CLIENT_ID`/`CLIENT_SECRET`). The zero-config Google provider auto-reads these specific names.
+- **Learned:** Tailwind arbitrary variant `[[data-state=closed]_&]` doesn't work for targeting Radix Collapsible state on a descendant. Use the group pattern: `group/name` on the `Collapsible` root + `group-data-[state=closed]/name:-rotate-90` on the icon.
+- **Watch:** Three new env vars needed on Vercel: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_SECRET`. Without these, production sign-in will error.
+- **Watch:** `MobileSubNav` has no default hide breakpoint — every consumer must pass one via className (e.g., `lg:hidden` or `md:hidden`). If forgotten, the pill bar shows at all sizes.
+- **Next:** Monitor Google OAuth in production. Consider extracting tasks-view.tsx mobile/desktop into separate files (975 lines, flagged in code review). The mark-done button on task cards is invisible on mobile (hover-only opacity) — mobile users must use the detail sheet's status Select instead, which works but could be more discoverable.
+
 ## 2026-03-12 (session 28)
 
 - Added `description` column to `cron_jobs` table (text, nullable). Threaded through `DbCronJob`, `upsertCronJobs`, `IngestCronJob`, `DayEvent`, and `EventCard`. Description shows as a muted subtitle on calendar event cards and in the native tooltip (combined with run summary).
