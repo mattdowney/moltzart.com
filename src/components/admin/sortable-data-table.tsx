@@ -23,6 +23,13 @@ interface SortableDataTableProps<T> {
   rowAction?: (row: T) => ReactNode;
 }
 
+/** Matches ISO-style date strings: YYYY-MM-DD with optional time portion. */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+
+function isDateString(v: string): boolean {
+  return ISO_DATE_RE.test(v) && !Number.isNaN(Date.parse(v));
+}
+
 const thBase = "text-left text-xs md:text-[11px] font-medium text-zinc-500 px-3 py-2.5 md:py-1.5 cursor-pointer select-none transition-colors hover:text-zinc-300";
 const tdBase = "px-3 py-2.5 md:py-1.5";
 
@@ -48,7 +55,14 @@ export function SortableDataTable<T>({ columns, rows, rowHref, rowKey, rowAction
       if (typeof av === "number" && typeof bv === "number") {
         return sortAsc ? av - bv : bv - av;
       }
-      const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
+      // Compare date-like strings chronologically instead of lexicographically
+      const sa = String(av);
+      const sb = String(bv);
+      if (isDateString(sa) && isDateString(sb)) {
+        const diff = new Date(sa).getTime() - new Date(sb).getTime();
+        return sortAsc ? diff : -diff;
+      }
+      const cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
       return sortAsc ? cmp : -cmp;
     });
   }, [rows, columns, sortCol, sortAsc]);
