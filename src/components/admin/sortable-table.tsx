@@ -64,8 +64,10 @@ export function SortableTable({ children }: { children: ReactNode }) {
     return [...rows].sort((a, b) => {
       const aText = extractText(a[sortCol]).trim();
       const bText = extractText(b[sortCol]).trim();
-      const aNum = parseFloat(aText);
-      const bNum = parseFloat(bText);
+      // Only treat as numeric if the entire string is a number (avoid partial
+      // parses like "2026-02-07" → 2026 which breaks date sorting).
+      const aNum = aText === "" ? NaN : Number(aText);
+      const bNum = bText === "" ? NaN : Number(bText);
       if (!isNaN(aNum) && !isNaN(bNum)) {
         return sortAsc ? aNum - bNum : bNum - aNum;
       }

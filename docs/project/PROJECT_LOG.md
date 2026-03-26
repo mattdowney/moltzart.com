@@ -1,5 +1,13 @@
 # Project Log
 
+## 2026-03-22 (session 30)
+
+- Replaced sidebar "Log out" button and "Workspace" label with a Settings dropdown menu in the footer. Menu opens upward with two items: Styleguide (navigated out of main nav) and Log out. Removed Styleguide from `adminNavItems`.
+- **Decision:** `DropdownMenu` with `side="top"` instead of a Dialog — a modal for two menu items is bad UX. Dropdown is lightweight, in-context, keyboard-accessible, and uses the existing shadcn component.
+- **Learned:** When Radix `DropdownMenu` closes, focus returns to the trigger and fires `focus-visible:ring-2` from `sidebarMenuButtonVariants`. Override with `focus-visible:ring-0` on the trigger only.
+- **Watch:** `getAdminPageTitle()` now has a hardcoded check for `/admin/styleguide` since it was removed from `adminNavItems`. If more items move to Settings, they'll each need a similar line.
+- **Next:** `tasks-view.tsx` splitting (975 lines, flagged session 29). Mark-done button still hover-only on mobile.
+
 ## 2026-03-21 (session 29)
 
 - Replaced password-based admin auth with Google OAuth via Auth.js v5. Only `matt@mattdowney.com` can sign in. Deleted `/api/admin/verify`, `/api/admin/logout`, and the standalone `/app/tasks` page (was orphaned — only `/admin/tasks` should exist). Updated all API routes to use Auth.js sessions via `getAdminAuth()`. Sidebar logout now uses Auth.js signout.
