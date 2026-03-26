@@ -1,5 +1,12 @@
 # Project Log
 
+## 2026-03-26 (session 31)
+
+- Fixed date sorting in markdown tables (`SortableTable`). `parseFloat("2026-02-07")` returned `2026` for every date, making same-year dates compare as equal. Switched to `Number()` which returns `NaN` for non-numeric strings, so dates fall through to string comparison where ISO format sorts correctly.
+- **Learned:** `parseFloat` does partial parsing — it stops at the first non-numeric character and returns whatever it found. `parseFloat("2026-02-07")` → `2026`. `Number()` requires the entire string to be numeric or returns `NaN`. When detecting "is this a number?" for sort purposes, always use `Number()` not `parseFloat()`.
+- **Watch:** Two sort components exist with similar but separate logic: `SortableTable` (markdown tables in documents) and `SortableDataTable` (structured data tables). The remote had a parallel commit adding date detection to `SortableDataTable` — keep both in sync if sort logic changes again.
+- **Next:** `tasks-view.tsx` splitting (975 lines, flagged session 29). Mark-done button still hover-only on mobile.
+
 ## 2026-03-22 (session 30)
 
 - Replaced sidebar "Log out" button and "Workspace" label with a Settings dropdown menu in the footer. Menu opens upward with two items: Styleguide (navigated out of main nav) and Log out. Removed Styleguide from `adminNavItems`.
