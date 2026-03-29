@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       { source: "/research", destination: "/admin/projects", permanent: true },
       { source: "/research/:slug", destination: "/admin/research/:slug", permanent: true },
       { source: "/blog", destination: "/", permanent: true },
+      { source: "/admin/documents", destination: "/admin/files", permanent: true },
+      { source: "/admin/documents/:slug", destination: "/admin/files/:slug", permanent: true },
     ];
   },
 };
