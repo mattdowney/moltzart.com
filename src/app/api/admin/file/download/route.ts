@@ -1,20 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDownloadUrl } from "@vercel/blob";
+import { head } from "@vercel/blob";
 
 export async function GET(req: NextRequest) {
   const blobUrl = req.nextUrl.searchParams.get("url");
-  const filename = req.nextUrl.searchParams.get("filename");
+  const filename = req.nextUrl.searchParams.get("filename") || "download";
 
   if (!blobUrl) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
   }
 
   try {
-    const downloadUrl = await getDownloadUrl(blobUrl);
+    // Verify the blob exists and get metadata
+    const blobMeta = await head(blobUrl);
 
-    return NextResponse.redirect(downloadUrl, {
+    // Fetch the blob content server-side using the token
+    const res = await fetch(blobMeta.downloadUrl, {
       headers: {
-        "Content-Disposition": `attachment; filename="${filename || "download"}"`,
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
+
+    if (!res.ok) {
+      // If token auth doesn't work, try fetching with the blob URL directly
+      // (server-side fetch from Vercel infra can access private blobs)
+      const directRes = await fetch(blobUrl, {
+        headers: {
+          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        },
+      });
+
+      if (!directRes.ok) {
+        return NextResponse.json(
+          { error: `Blob fetch failed: ${directRes.status}` },
+          { status: 500 }
+        );
+      }
+
+      const body = directRes.body;
+      return new NextResponse(body, {
+        headers: {
+          "Content-Type": blobMeta.contentType || "application/octet-stream",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Content-Length": String(blobMeta.size),
+        },
+      });
+    }
+
+    const body = res.body;
+    return new NextResponse(body, {
+      headers: {
+        "Content-Type": blobMeta.contentType || "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Length": String(blobMeta.size),
       },
     });
   } catch (err: unknown) {
