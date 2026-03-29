@@ -90,7 +90,7 @@ export function DocumentsView({ initialData }: DocumentsViewProps) {
         <SortableDataTable
           columns={columns}
           rows={documents}
-          rowHref={(doc) => `/admin/documents/${doc.slug || doc.id}`}
+          rowHref={(doc) => `/admin/files/${doc.slug || doc.id}`}
           rowKey={(doc) => doc.id}
           rowAction={(doc) => (
             <Button

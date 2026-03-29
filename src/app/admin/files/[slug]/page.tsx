@@ -22,7 +22,7 @@ export default async function DocumentDetailPage({ params }: Props) {
       <PageHeader
         title={doc.title}
         breadcrumbs={[
-          { label: "Documents", href: "/admin/documents" },
+          { label: "Files", href: "/admin/files" },
           { label: doc.title },
         ]}
         meta={

@@ -14,7 +14,7 @@ export const adminNavItems: SidebarNavItem[] = [
   { label: "Crons", href: "/admin/calendar", icon: CalendarDays },
   { label: "Projects", href: "/admin/projects", icon: Briefcase },
   { label: "Newsletter", href: "/admin/newsletter", icon: Newspaper },
-  { label: "Documents", href: "/admin/documents", icon: FileText },
+  { label: "Files", href: "/admin/files", icon: FileText },
 ];
 
 export function getAdminPageTitle(pathname: string): string {

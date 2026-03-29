@@ -2063,3 +2063,72 @@ export async function deleteDocument(id: string): Promise<boolean> {
   `;
   return rows.length > 0;
 }
+
+// --- Files (Blob Storage) ---
+
+export interface DbFile {
+  id: string;
+  filename: string;
+  blob_url: string;
+  size: number;
+  content_type: string | null;
+  uploader: string | null;
+  created_at: string;
+}
+
+export async function fetchFilesDb(): Promise<DbFile[]> {
+  const rows = await sql()`
+    SELECT id, filename, blob_url, size, content_type, uploader, created_at
+    FROM files
+    ORDER BY created_at DESC
+  `;
+  return rows.map((r) => ({
+    id: String(r.id),
+    filename: String(r.filename),
+    blob_url: String(r.blob_url),
+    size: toNumberOr(r.size, 0),
+    content_type: r.content_type ? String(r.content_type) : null,
+    uploader: r.uploader ? String(r.uploader) : null,
+    created_at: toDateTimeStr(r.created_at),
+  }));
+}
+
+export async function insertFile(input: {
+  filename: string;
+  blob_url: string;
+  size: number;
+  content_type?: string;
+  uploader?: string;
+}): Promise<DbFile> {
+  const rows = await sql()`
+    INSERT INTO files (filename, blob_url, size, content_type, uploader)
+    VALUES (
+      ${input.filename},
+      ${input.blob_url},
+      ${input.size},
+      ${input.content_type || null},
+      ${input.uploader || null}
+    )
+    RETURNING id, filename, blob_url, size, content_type, uploader, created_at
+  `;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    filename: String(r.filename),
+    blob_url: String(r.blob_url),
+    size: toNumberOr(r.size, 0),
+    content_type: r.content_type ? String(r.content_type) : null,
+    uploader: r.uploader ? String(r.uploader) : null,
+    created_at: toDateTimeStr(r.created_at),
+  };
+}
+
+export async function deleteFile(id: string): Promise<{ blob_url: string } | null> {
+  const rows = await sql()`
+    DELETE FROM files
+    WHERE id = ${id}::uuid
+    RETURNING blob_url
+  `;
+  if (rows.length === 0) return null;
+  return { blob_url: String(rows[0].blob_url) };
+}

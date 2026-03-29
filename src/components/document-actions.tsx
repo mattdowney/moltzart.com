@@ -34,7 +34,7 @@ export function DocumentActions({ documentId, title, content }: DocumentActionsP
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete");
-      router.push("/admin/documents");
+      router.push("/admin/files");
     } catch {
       setDeleting(false);
     }
