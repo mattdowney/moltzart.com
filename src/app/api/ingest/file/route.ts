@@ -31,29 +31,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const uploader = (formData.get("uploader") as string) || "api";
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    const uploader = (formData.get("uploader") as string) || "api";
 
-  if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    const blob = await put(file.name, file, {
+      access: "public",
+    });
+
+    const dbFile = await insertFile({
+      filename: file.name,
+      blob_url: blob.url,
+      size: file.size,
+      content_type: file.type || undefined,
+      uploader,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      file: dbFile,
+      blob_url: blob.url,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("File upload error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const blob = await put(file.name, file, {
-    access: "public",
-  });
-
-  const dbFile = await insertFile({
-    filename: file.name,
-    blob_url: blob.url,
-    size: file.size,
-    content_type: file.type || undefined,
-    uploader,
-  });
-
-  return NextResponse.json({
-    ok: true,
-    file: dbFile,
-    blob_url: blob.url,
-  });
 }
