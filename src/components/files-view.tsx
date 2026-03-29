@@ -227,7 +227,7 @@ export function FilesView({ documents, files: initialFiles }: FilesViewProps) {
             rowAction={(file) => (
               <div className="flex items-center gap-1">
                 <a
-                  href={file.blob_url}
+                  href={`/api/admin/file/download?url=${encodeURIComponent(file.blob_url)}&filename=${encodeURIComponent(file.filename)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
