@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { FileText, Trash2, Upload, Download, File, X } from "lucide-react";
+import { FileText, Trash2, Upload, Download, File } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Button } from "@/components/ui/button";
@@ -92,7 +92,6 @@ export function FilesView({ documents, files: initialFiles }: FilesViewProps) {
   const [deletingDoc, setDeletingDoc] = useState<string | null>(null);
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [docs, setDocs] = useState(documents);
 
@@ -155,17 +154,6 @@ export function FilesView({ documents, files: initialFiles }: FilesViewProps) {
     }
   }, []);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      if (e.dataTransfer.files.length > 0) {
-        uploadFiles(e.dataTransfer.files);
-      }
-    },
-    [uploadFiles]
-  );
-
   const totalCount = docs.length + files.length;
 
   return (
@@ -193,28 +181,6 @@ export function FilesView({ documents, files: initialFiles }: FilesViewProps) {
           {uploading ? "Uploading..." : "Upload"}
         </Button>
       </PageHeader>
-
-      {/* Drop zone */}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        className={`rounded-lg border-2 border-dashed transition-colors p-6 text-center ${
-          dragOver
-            ? "border-blue-500 bg-blue-500/5"
-            : "border-zinc-800 hover:border-zinc-700"
-        }`}
-      >
-        <div className="flex flex-col items-center gap-2 text-zinc-500">
-          <Upload className="size-6" />
-          <p className="type-body-sm">
-            {uploading ? "Uploading..." : "Drop files here or click Upload"}
-          </p>
-        </div>
-      </div>
 
       {/* Uploaded Files */}
       {files.length > 0 && (
