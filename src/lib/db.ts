@@ -279,21 +279,28 @@ export async function fetchTasksByStatus(status?: string): Promise<DbTask[]> {
 
 export async function insertTask(
   title: string,
-  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string; assigned_to?: string }
+  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string; assigned_to?: string; working?: boolean }
 ): Promise<string> {
   const capabilities = await getTaskSchemaCapabilities();
   const status = normalizeTaskStatusInput(opts?.status);
+  const working = opts?.working ?? false;
   const rows = capabilities.hasBoardOrder
     ? await (async () => {
         const maxOrderRows = status === "backlog"
           ? await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status IN ('backlog', 'open')`
           : await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status = ${status}`;
         const boardOrder = Number(maxOrderRows[0]?.max_order ?? 0) + 1;
-        return sql()`
-          INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to)
-          VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null})
-          RETURNING id
-        `;
+        return capabilities.hasWorking
+          ? sql()`
+              INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to, working)
+              VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null}, ${working})
+              RETURNING id
+            `
+          : sql()`
+              INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to)
+              VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null})
+              RETURNING id
+            `;
       })()
     : await sql()`
         INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status)
