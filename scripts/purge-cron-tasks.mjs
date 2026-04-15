@@ -39,6 +39,17 @@ const CRON_TITLE_PATTERNS = [
   /^behavioral[- ]weekly[- ]report/i,
   /^scout[- ]/i,
   /-\d+[mh]$/i,
+  /\bcron\b/i,
+  /\bplaybook\b/i,
+  /\bsweep\b/i,
+  /\bautoresearch\b/i,
+  /\bbriefing\b/i,
+  /\bdistillation\b/i,
+  /\bproactive\b/i,
+  /\bstartup\b/i,
+  /\bnightly\b/i,
+  /\bweekly\b/i,
+  /\bhourly\b/i,
 ];
 
 function looksLikeCron(task) {
