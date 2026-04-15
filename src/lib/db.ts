@@ -64,6 +64,7 @@ function toJsonArrayOrNull(v: unknown): unknown[] | null {
 interface TaskSchemaCapabilities {
   hasBoardOrder: boolean;
   hasWorking: boolean;
+  hasSource: boolean;
 }
 
 let _taskSchemaCapabilities: TaskSchemaCapabilities | null = null;
@@ -86,12 +87,20 @@ async function getTaskSchemaCapabilities(): Promise<TaskSchemaCapabilities> {
         WHERE table_schema = 'public'
           AND table_name = 'tasks'
           AND column_name = 'working'
-      ) AS has_working
+      ) AS has_working,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'tasks'
+          AND column_name = 'source'
+      ) AS has_source
   `;
 
   _taskSchemaCapabilities = {
     hasBoardOrder: Boolean(rows[0]?.has_board_order),
     hasWorking: Boolean(rows[0]?.has_working),
+    hasSource: Boolean(rows[0]?.has_source),
   };
   return _taskSchemaCapabilities;
 }
@@ -189,6 +198,7 @@ export interface DbTask {
   assigned_to: string | null;
   board_order: number;
   working: boolean;
+  source: string;
   created_at: string;
   updated_at: string;
 }
@@ -196,22 +206,40 @@ export interface DbTask {
 export async function fetchTasksDb(): Promise<DbTask[]> {
   const capabilities = await getTaskSchemaCapabilities();
   const rows = capabilities.hasBoardOrder
-    ? await sql()`
-        SELECT * FROM tasks
-        WHERE status != 'done' OR updated_at > now() - interval '7 days'
-        ORDER BY
-          CASE status
-            WHEN 'backlog' THEN 0
-            WHEN 'open' THEN 0
-            WHEN 'todo' THEN 1
-            WHEN 'in_progress' THEN 2
-            WHEN 'done' THEN 3
-            ELSE 4
-          END,
-          board_order ASC NULLS LAST,
-          due_date NULLS LAST,
-          created_at
-      `
+    ? capabilities.hasSource
+      ? await sql()`
+          SELECT * FROM tasks
+          WHERE (source IS NULL OR source != 'cron')
+            AND (status != 'done' OR updated_at > now() - interval '7 days')
+          ORDER BY
+            CASE status
+              WHEN 'backlog' THEN 0
+              WHEN 'open' THEN 0
+              WHEN 'todo' THEN 1
+              WHEN 'in_progress' THEN 2
+              WHEN 'done' THEN 3
+              ELSE 4
+            END,
+            board_order ASC NULLS LAST,
+            due_date NULLS LAST,
+            created_at
+        `
+      : await sql()`
+          SELECT * FROM tasks
+          WHERE status != 'done' OR updated_at > now() - interval '7 days'
+          ORDER BY
+            CASE status
+              WHEN 'backlog' THEN 0
+              WHEN 'open' THEN 0
+              WHEN 'todo' THEN 1
+              WHEN 'in_progress' THEN 2
+              WHEN 'done' THEN 3
+              ELSE 4
+            END,
+            board_order ASC NULLS LAST,
+            due_date NULLS LAST,
+            created_at
+        `
     : await sql()`
         SELECT * FROM tasks
         WHERE status != 'done' OR updated_at > now() - interval '7 days'
@@ -279,28 +307,37 @@ export async function fetchTasksByStatus(status?: string): Promise<DbTask[]> {
 
 export async function insertTask(
   title: string,
-  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string; assigned_to?: string; working?: boolean }
+  opts?: { detail?: string; effort?: string; due_date?: string; blocked_by?: string; status?: string; assigned_to?: string; working?: boolean; source?: string }
 ): Promise<string> {
   const capabilities = await getTaskSchemaCapabilities();
   const status = normalizeTaskStatusInput(opts?.status);
   const working = opts?.working ?? false;
+  const source = opts?.source || "human";
   const rows = capabilities.hasBoardOrder
     ? await (async () => {
         const maxOrderRows = status === "backlog"
           ? await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status IN ('backlog', 'open')`
           : await sql()`SELECT COALESCE(MAX(board_order), 0) AS max_order FROM tasks WHERE status = ${status}`;
         const boardOrder = Number(maxOrderRows[0]?.max_order ?? 0) + 1;
-        return capabilities.hasWorking
-          ? sql()`
-              INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to, working)
-              VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null}, ${working})
-              RETURNING id
-            `
-          : sql()`
-              INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to)
-              VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null})
-              RETURNING id
-            `;
+        if (capabilities.hasWorking && capabilities.hasSource) {
+          return sql()`
+            INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to, working, source)
+            VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null}, ${working}, ${source})
+            RETURNING id
+          `;
+        }
+        if (capabilities.hasWorking) {
+          return sql()`
+            INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to, working)
+            VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null}, ${working})
+            RETURNING id
+          `;
+        }
+        return sql()`
+          INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status, board_order, assigned_to)
+          VALUES (${title}, ${opts?.detail || null}, ${opts?.effort || null}, ${opts?.due_date || null}, ${opts?.blocked_by || null}, ${status}, ${boardOrder}, ${opts?.assigned_to || null})
+          RETURNING id
+        `;
       })()
     : await sql()`
         INSERT INTO tasks (title, detail, effort, due_date, blocked_by, status)
@@ -308,6 +345,15 @@ export async function insertTask(
         RETURNING id
       `;
   return rows[0].id;
+}
+
+export async function deleteTask(id: string): Promise<boolean> {
+  const rows = await sql()`
+    DELETE FROM tasks
+    WHERE id = ${id}
+    RETURNING id
+  `;
+  return rows.length > 0;
 }
 
 export async function updateTask(

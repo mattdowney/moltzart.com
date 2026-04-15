@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateTask } from "@/lib/db";
+import { updateTask, deleteTask } from "@/lib/db";
 import { normalizeTaskStatusInput } from "@/lib/task-workflow";
 
 function checkIngestAuth(req: NextRequest): boolean {
@@ -36,5 +36,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!checkIngestAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const removed = await deleteTask(id);
+  if (!removed) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
   return NextResponse.json({ ok: true });
 }

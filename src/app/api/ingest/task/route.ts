@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, detail, effort, due_date, blocked_by, status, assigned_to, working } = body;
+  const { title, detail, effort, due_date, blocked_by, status, assigned_to, working, source } = body;
 
   if (!title) {
     return NextResponse.json({ error: "Missing required field: title" }, { status: 400 });
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     status: normalizedStatus,
     assigned_to,
     working: working ?? false,
+    source,
   });
   return NextResponse.json({ ok: true, id });
 }
