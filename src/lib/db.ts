@@ -209,7 +209,7 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
     ? capabilities.hasSource
       ? await sql()`
           SELECT * FROM tasks
-          WHERE (source IS NULL OR source != 'cron')
+          WHERE source = 'human'
             AND (status != 'done' OR updated_at > now() - interval '7 days')
           ORDER BY
             CASE status
@@ -253,6 +253,26 @@ export async function fetchTasksDb(): Promise<DbTask[]> {
           due_date NULLS LAST,
           created_at
       `;
+  return rows.map((r) => ({
+    ...r,
+    status: normalizeTaskStatusInput(r.status),
+    board_order: toNumberOr(r.board_order, 1),
+    working: Boolean(r.working),
+    due_date: r.due_date ? toDateStr(r.due_date) : null,
+    created_at: toDateTimeStr(r.created_at),
+    updated_at: toDateTimeStr(r.updated_at),
+  })) as unknown as DbTask[];
+}
+
+export async function fetchAgentTasksDb(): Promise<DbTask[]> {
+  const capabilities = await getTaskSchemaCapabilities();
+  if (!capabilities.hasSource) return [];
+  const rows = await sql()`
+    SELECT * FROM tasks
+    WHERE source = 'agent'
+      AND (status != 'done' OR updated_at > now() - interval '7 days')
+    ORDER BY created_at DESC
+  `;
   return rows.map((r) => ({
     ...r,
     status: normalizeTaskStatusInput(r.status),
@@ -312,7 +332,7 @@ export async function insertTask(
   const capabilities = await getTaskSchemaCapabilities();
   const status = normalizeTaskStatusInput(opts?.status);
   const working = opts?.working ?? false;
-  const source = opts?.source || "human";
+  const source = opts?.source || "agent";
   const rows = capabilities.hasBoardOrder
     ? await (async () => {
         const maxOrderRows = status === "backlog"
@@ -345,6 +365,22 @@ export async function insertTask(
         RETURNING id
       `;
   return rows[0].id;
+}
+
+export async function deleteTasksBySource(source: string): Promise<number> {
+  const rows = await sql()`
+    DELETE FROM tasks WHERE source = ${source} RETURNING id
+  `;
+  return rows.length;
+}
+
+export async function fetchHumanTasksRaw(): Promise<{ id: string; title: string }[]> {
+  const capabilities = await getTaskSchemaCapabilities();
+  if (!capabilities.hasSource) return [];
+  const rows = await sql()`
+    SELECT id, title FROM tasks WHERE source = 'human'
+  `;
+  return rows as unknown as { id: string; title: string }[];
 }
 
 export async function deleteTask(id: string): Promise<boolean> {

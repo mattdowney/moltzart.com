@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/reap-cron-tasks",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/admin/canary-human-cron-bleed",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insertTask, fetchTasksByStatus } from "@/lib/db";
 import { normalizeTaskStatusInput } from "@/lib/task-workflow";
+import { resolveSource } from "@/lib/task-provenance";
 
 function checkIngestAuth(req: NextRequest): boolean {
   const auth = req.headers.get("authorization");
@@ -24,11 +25,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, detail, effort, due_date, blocked_by, status, assigned_to, working, source } = body;
+  const { title, detail, effort, due_date, blocked_by, status, assigned_to, working } = body;
 
   if (!title) {
     return NextResponse.json({ error: "Missing required field: title" }, { status: 400 });
   }
+
+  const source = resolveSource({
+    title,
+    humanTokenHeader: req.headers.get("x-human-token"),
+  });
 
   const normalizedStatus = status === undefined ? undefined : normalizeTaskStatusInput(status);
   const id = await insertTask(title, {
