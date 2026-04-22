@@ -69,7 +69,7 @@ function sameDateKey(iso: string | null | undefined, dateKey: string): boolean {
   return Boolean(iso && iso.slice(0, 10) === dateKey);
 }
 
-function scheduledTimeToUtc(dateKey: string, hour: number, minute: number, tz?: string): Date {
+export function scheduledTimeToUtc(dateKey: string, hour: number, minute: number, tz?: string): Date {
   const isoStr = `${dateKey}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
   if (!tz) return new Date(isoStr);
   const utcDate = new Date(isoStr + "Z");

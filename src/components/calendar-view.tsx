@@ -7,7 +7,7 @@ import { AdminPageIntro } from "@/components/admin/admin-page-intro";
 import { Panel } from "@/components/admin/panel";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { getScheduledRunStatus, isHighFrequencyCron, parseCronField, cronMatchesDay, type CronRunStatus } from "@/lib/cron-health";
+import { getScheduledRunStatus, isHighFrequencyCron, parseCronField, cronMatchesDay, scheduledTimeToUtc, type CronRunStatus } from "@/lib/cron-health";
 import type { OpenClawCronMeta } from "@/lib/openclaw-crons";
 import { AGENT_META, getAgentMeta } from "@/lib/agents";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -137,7 +137,21 @@ function categorizeCrons(
       if (!scheduled.has(run.dateKey)) scheduled.set(run.dateKey, []);
 
       const matchKey = `${job.id}:${run.dateKey}`;
-      const matchingRuns = runIndex.get(matchKey) || [];
+      const dayRuns = runIndex.get(matchKey) || [];
+      // Match each scheduled slot to the run closest in time (within 30 min).
+      // Without this, hourly crons showed the earliest run's status on every slot.
+      const scheduledAt = scheduledTimeToUtc(run.dateKey, run.hour, run.minute, job.schedule_tz).getTime();
+      const MATCH_WINDOW_MS = 30 * 60_000;
+      let bestRun: DbJobRun | undefined;
+      let bestDelta = Infinity;
+      for (const candidate of dayRuns) {
+        const delta = Math.abs(new Date(candidate.started_at).getTime() - scheduledAt);
+        if (delta <= MATCH_WINDOW_MS && delta < bestDelta) {
+          bestRun = candidate;
+          bestDelta = delta;
+        }
+      }
+      const matchingRuns = bestRun ? [bestRun] : [];
       const { status, summary } = getScheduledRunStatus({
         job,
         matchingRuns,
