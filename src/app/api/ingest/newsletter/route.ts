@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
     if (!a.title) {
       return NextResponse.json({ error: "Each article requires a title" }, { status: 400 });
     }
+    if (a.status !== undefined && a.status !== "ingested" && a.status !== "candidate") {
+      return NextResponse.json({ error: `status must be 'ingested' or 'candidate', got: ${a.status}` }, { status: 400 });
+    }
     if (a.link) {
       try {
         const url = new URL(a.link);

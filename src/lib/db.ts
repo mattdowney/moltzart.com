@@ -113,6 +113,8 @@ function mapTaskStatusForLegacySchema(status: string): string {
 
 // --- Newsletter ---
 
+export type NewsletterStatus = "ingested" | "candidate";
+
 export interface DbNewsletterArticle {
   id: string;
   digest_date: string;
@@ -121,6 +123,7 @@ export interface DbNewsletterArticle {
   link: string | null;
   category: string | null;
   description: string | null;
+  status: NewsletterStatus;
   created_at: string;
 }
 
@@ -131,11 +134,12 @@ export async function fetchNewsletterArticlesDb(): Promise<DbNewsletterArticle[]
 
 export async function insertNewsletterArticles(
   digestDate: string,
-  articles: { title: string; source?: string; link?: string; category?: string; description?: string }[]
+  articles: { title: string; source?: string; link?: string; category?: string; description?: string; status?: NewsletterStatus }[]
 ): Promise<{ ids: string[]; skipped: string[] }> {
   const ids: string[] = [];
   const skipped: string[] = [];
   for (const a of articles) {
+    const status: NewsletterStatus = a.status ?? "ingested";
     // Check for duplicate: case-insensitive title match OR same normalized link
     const existing = a.link
       ? await sql()`
@@ -154,8 +158,8 @@ export async function insertNewsletterArticles(
       continue;
     }
     const rows = await sql()`
-      INSERT INTO newsletter_articles (digest_date, title, source, link, category, description)
-      VALUES (${digestDate}, ${a.title}, ${a.source || null}, ${a.link || null}, ${a.category || null}, ${a.description || null})
+      INSERT INTO newsletter_articles (digest_date, title, source, link, category, description, status)
+      VALUES (${digestDate}, ${a.title}, ${a.source || null}, ${a.link || null}, ${a.category || null}, ${a.description || null}, ${status})
       ON CONFLICT (digest_date, title) DO UPDATE SET
         link = COALESCE(EXCLUDED.link, newsletter_articles.link),
         source = COALESCE(EXCLUDED.source, newsletter_articles.source),
@@ -482,6 +486,7 @@ export interface NewsletterArticle {
   link: string;
   category?: string;
   sentToOs?: boolean;
+  status: NewsletterStatus;
 }
 
 export interface NewsletterDigest {
@@ -506,6 +511,7 @@ export async function fetchNewsletterDigests(): Promise<NewsletterDigest[]> {
       source: r.source || "",
       link: r.link || "",
       category: r.category || undefined,
+      status: r.status ?? "ingested",
     });
   }
 
@@ -537,6 +543,7 @@ export async function fetchNewsletterWeek(start: string, end: string): Promise<N
       link: r.link || "",
       category: r.category || undefined,
       sentToOs: r.sent_to_os || false,
+      status: (r.status as NewsletterStatus) || "ingested",
     });
   }
 

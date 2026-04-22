@@ -17,27 +17,39 @@ export interface FlatArticle {
   digestDate: string;
   dayLabel: string;
   sentToOs?: boolean;
+  status?: "ingested" | "candidate";
 }
 
 const columns: Column<FlatArticle>[] = [
   {
     key: "title",
     label: "Title",
-    render: (a) =>
-      a.link ? (
-        <a
-          href={a.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 hover:text-zinc-50 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {a.title}
-          <ExternalLink size={10} className="shrink-0 text-zinc-600" />
-        </a>
-      ) : (
-        a.title
-      ),
+    render: (a) => (
+      <span className="inline-flex items-center gap-2">
+        {a.link ? (
+          <a
+            href={a.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-zinc-50 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {a.title}
+            <ExternalLink size={10} className="shrink-0 text-zinc-600" />
+          </a>
+        ) : (
+          a.title
+        )}
+        {a.status === "candidate" && (
+          <span
+            className="rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-300"
+            title="Pica couldn't verify the URL. Review the link and Send to OS if it's good."
+          >
+            Candidate
+          </span>
+        )}
+      </span>
+    ),
     sortValue: (a) => a.title,
   },
   {
