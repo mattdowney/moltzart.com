@@ -1770,6 +1770,7 @@ export interface DbCronJob {
   last_duration_ms: number | null;
   next_run_at: string | null;
   consecutive_errors: number;
+  model: string | null;
   synced_at: string;
 }
 
@@ -1787,18 +1788,19 @@ export async function upsertCronJobs(
     last_duration_ms?: number | null;
     next_run_at?: string | null;
     consecutive_errors?: number;
+    model?: string | null;
   }[]
 ): Promise<number> {
   let upserted = 0;
   for (const j of jobs) {
     await sql()`
-      INSERT INTO cron_jobs (id, name, description, agent_id, enabled, schedule_expr, schedule_tz, last_run_at, last_status, last_duration_ms, next_run_at, consecutive_errors, synced_at)
+      INSERT INTO cron_jobs (id, name, description, agent_id, enabled, schedule_expr, schedule_tz, last_run_at, last_status, last_duration_ms, next_run_at, consecutive_errors, model, synced_at)
       VALUES (
         ${j.id}, ${j.name}, ${j.description ?? null}, ${j.agent_id || null}, ${j.enabled !== false},
         ${j.schedule_expr}, ${j.schedule_tz || "America/New_York"},
         ${j.last_run_at || null}::timestamptz, ${j.last_status || null},
         ${j.last_duration_ms ?? null}::int, ${j.next_run_at || null}::timestamptz,
-        ${j.consecutive_errors || 0}, now()
+        ${j.consecutive_errors || 0}, ${j.model ?? null}, now()
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -1812,6 +1814,7 @@ export async function upsertCronJobs(
         last_duration_ms = EXCLUDED.last_duration_ms,
         next_run_at = EXCLUDED.next_run_at,
         consecutive_errors = EXCLUDED.consecutive_errors,
+        model = COALESCE(EXCLUDED.model, cron_jobs.model),
         synced_at = EXCLUDED.synced_at
     `;
     upserted++;
@@ -1833,6 +1836,7 @@ export async function replaceCronJobsSnapshot(
     last_duration_ms?: number | null;
     next_run_at?: string | null;
     consecutive_errors?: number;
+    model?: string | null;
   }[]
 ): Promise<number> {
   if (jobs.length === 0) return 0;
@@ -1999,6 +2003,7 @@ export async function fetchCronJobs(): Promise<DbCronJob[]> {
     last_duration_ms: r.last_duration_ms != null ? toNumberOr(r.last_duration_ms, 0) : null,
     next_run_at: r.next_run_at ? toDateTimeStr(r.next_run_at) : null,
     consecutive_errors: toNumberOr(r.consecutive_errors, 0),
+    model: r.model ? String(r.model) : null,
     synced_at: toDateTimeStr(r.synced_at),
   })) as DbCronJob[];
 }

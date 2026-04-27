@@ -17,6 +17,7 @@ type IngestCronJob = {
   last_duration_ms?: number | null;
   next_run_at?: string | null;
   consecutive_errors?: number;
+  model?: string | null;
 };
 
 type IngestJobRun = {

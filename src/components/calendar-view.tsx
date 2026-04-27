@@ -34,6 +34,7 @@ interface DayEvent {
   status: CronRunStatus;
   summary?: string;
   description?: string | null;
+  model?: string | null;
 }
 
 // --- Status indicator styles ---
@@ -171,6 +172,7 @@ function categorizeCrons(
         status,
         summary,
         description: job.description,
+        model: job.model,
       });
     }
   }
@@ -462,6 +464,11 @@ function EventCard({ event }: { event: DayEvent }) {
         <span>&bull;</span>
         <span>{event.time}</span>
       </div>
+      {event.model && (
+        <div className="mt-0.5 pl-1 type-badge text-zinc-500">
+          {event.model.split("/").pop()}
+        </div>
+      )}
     </div>
   );
 }
