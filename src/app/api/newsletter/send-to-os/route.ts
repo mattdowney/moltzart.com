@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
   const res = await fetch(`${osBase}/api/newsletter/links/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, title, source, weekMonday, apiKey: osKey }),
+    body: JSON.stringify({
+      url,
+      title,
+      source,
+      weekMonday,
+      importSource: "moltzart_send_to_os",
+      apiKey: osKey,
+    }),
   });
 
   if (!res.ok) {
